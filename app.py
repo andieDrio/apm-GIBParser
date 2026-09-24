@@ -120,8 +120,7 @@ class MainWindow(QMainWindow):
             stealers=self._stealers,
         )
         PDFReportGenerator().generate(report, path)
-        QMessageBox.information(self, "PDF Export", f"Report exported to:
-{path}")
+        QMessageBox.information(self, "PDF Export", f"Report exported to:\n{path}")
 
     def _apply_dark_theme(self) -> None:
         self.setStyleSheet(
