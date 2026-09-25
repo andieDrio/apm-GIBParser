@@ -18,7 +18,7 @@ from storage.classifier import classify_records
 from storage.history import HistoryStore
 
 DEFAULT_LIMIT = 500
-DEFAULT_NEWNESS_WINDOW_DAYS = 1
+DEFAULT_NEWNESS_WINDOW_DAYS = 7
 DEFAULT_LATEST_LOOKBACK_DAYS = 30
 DEFAULT_REPORT_DIRECTORY = Path("reports")
 DEFAULT_HISTORY_PATH = Path("data/groupib_history.db")
