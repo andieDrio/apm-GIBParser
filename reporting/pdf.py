@@ -299,10 +299,21 @@ def _accounts_table(
         leading=6.8,
         textColor=colors.HexColor("#7F1D1D"),
     )
+    source_link_style = ParagraphStyle(
+        "ScanSourceLink",
+        fontName="Helvetica",
+        fontSize=5.0,
+        leading=5.8,
+        textColor=colors.HexColor("#2563EB"),
+        splitLongWords=True,
+    )
 
     def value(text: str, *, password: bool = False) -> Paragraph:
         style = password_style if password else value_style
         return Paragraph(escape(text), style)
+
+    def source_link(text: str) -> Paragraph:
+        return Paragraph(escape(text), source_link_style)
 
     headers = [
         "Compromised Date",
@@ -315,11 +326,11 @@ def _accounts_table(
         "Source",
         "Malware",
         "Threat Actor",
+        "Source Link",
     ]
     # Keep the full table inside the 15 mm A4-landscape frame (735 pt).
-    # Source Type is intentionally omitted so the operational fields have
-    # enough room for a one-glance scan without clipping the page edge.
-    widths = [65, 65, 65, 80, 95, 80, 60, 80, 65, 80]
+    # Source Type stays omitted; Source Link is a dedicated final column.
+    widths = [60, 58, 58, 72, 82, 65, 52, 62, 60, 60, 106]
 
     rows: list[list[object]] = [[
         Paragraph(escape(header), header_style) for header in headers
@@ -329,8 +340,6 @@ def _accounts_table(
         stealer = _join(record.stealer_families)
         source = _join(record.source_names)
         source_links = _join(record.source_links)
-        if source_links and source_links != "—":
-            source = f"{source}\\n{source_links}" if source != "—" else source_links
 
         rows.append(
             [
@@ -348,6 +357,7 @@ def _accounts_table(
                 value(source),
                 value(stealer),
                 value(_join(record.threat_actors) if include_actor else "—"),
+                source_link(source_links),
             ]
         )
 
