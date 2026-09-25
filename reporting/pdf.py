@@ -224,10 +224,10 @@ class _ReportDocument(BaseDocTemplate):
         canvas.saveState()
         canvas.setFont("Helvetica", 7)
         canvas.setFillColor(colors.HexColor("#64748B"))
-        canvas.drawString(
-            15 * mm,
+        canvas.drawCentredString(
+            landscape(A4)[0] / 2,
             9 * mm,
-            "Group-IB Daily Threat Intelligence • Asia/Manila (PHT)",
+            "Prepared by: APM",
         )
         canvas.drawRightString(
             landscape(A4)[0] - 15 * mm,
@@ -689,7 +689,7 @@ def _run_metadata_table(
         ["Run ID", run_id, "Collection", "SUCCESS"],
         ["Records Retrieved", str(retrieved_count), "Records Normalized", str(normalized_count)],
         ["Records Classified", str(classified_count), "Normalization Errors", "0"],
-        ["Report Status", "SUCCESS", "Timezone", "Asia/Manila (PHT)"],
+        ["Report Status", "SUCCESS", "Timezone", "PHT (UTC+8)"],
     ]
     rendered = []
     for row in rows:
@@ -758,8 +758,7 @@ def generate_daily_report(
         Paragraph(
             f"Report Date: {escape(report_date)} &nbsp;•&nbsp; "
             f"Window Start: {escape(format_ph_datetime(window_start))} &nbsp;•&nbsp; "
-            f"Window End: {escape(format_ph_datetime(window_end))} &nbsp;•&nbsp; "
-            "Time Zone: Asia/Manila (PHT)",
+            f"Window End: {escape(format_ph_datetime(window_end))}",
             subtitle,
         ),
         Table(
