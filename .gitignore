@@ -3,5 +3,7 @@ __pycache__/
 .venv/
 .env
 *.db
-exports/*.pdf
+reports/*.pdf
+data/*
+!data/.gitkeep
 .DS_Store
