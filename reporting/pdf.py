@@ -318,6 +318,8 @@ def generate_daily_report(
         Paragraph("Group-IB Daily Threat Intelligence Report", title),
         Paragraph(
             f"Report Date: {escape(report_date)} &nbsp;•&nbsp; "
+            "Start Time: 12:00 Midnight &nbsp;•&nbsp; "
+            "End Time: 11:59 PM &nbsp;•&nbsp; "
             "Time Zone: Asia/Manila (PHT)",
             subtitle,
         ),
