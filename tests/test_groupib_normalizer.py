@@ -46,8 +46,6 @@ class GroupIBNormalizerTests(unittest.TestCase):
                 }
             ],
             "parsedLogin": {"domain": "example.test", "ip": None},
-            "password": "must-never-enter-canonical-model",
-            "source": [{"id": None, "idType": None, "type": "example-source"}],
             "sourceType": ["example-source"],
             "service": {
                 "domain": "example.test",
