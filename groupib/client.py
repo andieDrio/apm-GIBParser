@@ -8,6 +8,7 @@ from typing import Any, Mapping
 import httpx
 
 DEFAULT_BASE_URL = "https://tap.group-ib.com/api/v2/"
+COMPROMISED_ACCOUNT_PATH = "compromised/account_group"
 COMPROMISED_ACCOUNT_UPDATED_PATH = "compromised/account_group/updated"
 SEQUENCE_LIST_PATH = "sequence_list"
 
@@ -42,6 +43,15 @@ class GroupIBResponse:
 
     count: int
     seq_update: int
+    items: tuple[Mapping[str, Any], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class GroupIBSliceResponse:
+    """Validated date-bounded response from a Group-IB collection slice."""
+
+    count: int
+    result_id: str | None
     items: tuple[Mapping[str, Any], ...]
 
 
@@ -146,6 +156,64 @@ class GroupIBClient:
             items=tuple(all_items),
         )
 
+    def get_compromised_account_slice(
+        self,
+        *,
+        date_from: str,
+        date_to: str,
+        limit: int = 500,
+    ) -> GroupIBSliceResponse:
+        """Retrieve the exact latest time slice from the collection endpoint.
+
+        Group-IB documents the non-updated collection endpoint with df/dt for
+        a data slice. This is used for the daily report because the report's
+        primary requirement is the provider data whose observation window is
+        the previous 24 hours through the current run time.
+        """
+        if not date_from or not date_to:
+            raise ValueError("Group-IB slice requires both date_from and date_to.")
+        if date_to <= date_from:
+            raise ValueError("Group-IB slice date_to must be after date_from.")
+        if not 1 <= limit <= 500:
+            raise ValueError("Group-IB slice limit must be between 1 and 500.")
+
+        url = f"{self._base_url}{COMPROMISED_ACCOUNT_PATH}"
+        params: dict[str, Any] = {
+            "df": date_from,
+            "dt": date_to,
+            "limit": limit,
+        }
+
+        all_items: list[Mapping[str, Any]] = []
+        result_id: str | None = None
+        while True:
+            try:
+                response = self._client.get(url, params=params)
+            except httpx.TimeoutException as exc:
+                raise GroupIBRequestError("Group-IB slice request timed out.") from exc
+            except httpx.HTTPError as exc:
+                raise GroupIBRequestError("Group-IB slice request failed.") from exc
+
+            self._raise_for_status(response)
+            try:
+                payload = response.json()
+            except ValueError as exc:
+                raise GroupIBSchemaError("Group-IB slice response was invalid JSON.") from exc
+
+            page = self._parse_slice_response(payload)
+            all_items.extend(page.items)
+            result_id = page.result_id
+            if not page.items or not result_id:
+                break
+
+            params = {"resultId": result_id, "limit": limit}
+
+        return GroupIBSliceResponse(
+            count=len(all_items),
+            result_id=result_id,
+            items=tuple(all_items),
+        )
+
     def _get_updated_page(
         self,
         *,
@@ -197,6 +265,30 @@ class GroupIBClient:
                     return int(value)
         raise GroupIBSchemaError(
             "Group-IB sequence response has no valid compromised/account_group seqUpdate."
+        )
+
+    @staticmethod
+    def _parse_slice_response(payload: Any) -> GroupIBSliceResponse:
+        if not isinstance(payload, dict):
+            raise GroupIBSchemaError("Group-IB slice response must be a JSON object.")
+
+        count = payload.get("count")
+        result_id = payload.get("resultId")
+        items = payload.get("items")
+
+        if not isinstance(count, int) or isinstance(count, bool):
+            raise GroupIBSchemaError("Group-IB slice field 'count' must be an integer.")
+        if result_id is not None and not isinstance(result_id, str):
+            raise GroupIBSchemaError("Group-IB slice field 'resultId' must be a string.")
+        if not isinstance(items, list):
+            raise GroupIBSchemaError("Group-IB slice field 'items' must be an array.")
+        if not all(isinstance(item, dict) for item in items):
+            raise GroupIBSchemaError("Group-IB slice 'items' must contain objects.")
+
+        return GroupIBSliceResponse(
+            count=count,
+            result_id=result_id,
+            items=tuple(items),
         )
 
     @staticmethod
