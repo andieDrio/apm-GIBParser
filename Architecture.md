@@ -282,7 +282,7 @@ Phase 3 implementation now provides:
 - provider response validation before normalization;
 - canonical compromise records;
 - deterministic provider-record identity with a documented SHA-256 fallback;
-- observation fingerprints that exclude password/session-secret fields;
+- observation fingerprints that exclude the plaintext password while retaining only credential-presence semantics for repeat detection;
 - unit tests for contract parsing and normalization.
 
 Phase 4 implementation provides:
