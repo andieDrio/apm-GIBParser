@@ -1,10 +1,15 @@
-"""Tests for Phase 5 donut chart generation."""
+"""Tests for professional Phase 5 bar-chart panels."""
 
 from __future__ import annotations
 
 import unittest
 
-from reporting.charts import distribution, new_vs_historical, distribution_panel, paired_distribution_panel
+from reporting.charts import (
+    distribution,
+    distribution_panel,
+    new_vs_historical,
+    paired_distribution_panel,
+)
 
 
 class ChartTests(unittest.TestCase):
