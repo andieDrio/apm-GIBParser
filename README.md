@@ -145,10 +145,10 @@ REPEAT
 
 ## Current Phase
 
-**PHASE 3 — Daily Retrieval & Normalization — COMPLETE**
+**PHASE 3 — Daily Retrieval & Normalization — IMPLEMENTED; VALIDATION PENDING**
 
 Phase 1 and Phase 2 are complete. Phase 3 now has the verified provider client, canonical normalization boundary, deterministic identity fallback, observation fingerprinting, and executable unit tests.
 
-Next gate: **PHASE 4 — Local History & NEW/OLD Classification**.
+After the local test suite passes, the next gate is **PHASE 4 — Local History & NEW/OLD Classification**.
 
 Pagination/incremental retrieval parameters remain intentionally deferred until independently verified.
