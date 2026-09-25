@@ -132,7 +132,8 @@ apm-GIBParser/
 ├── reports/                     # generated PDFs, ignored by Git
 ├── data/                        # local history, ignored by Git
 ├── tools/
-│   └── groupib_contract_probe.py
+│   ├── groupib_contract_probe.py
+│   └── groupib_latest_data_probe.py
 ├── .env                         # local secrets, ignored by Git
 ├── requirements.txt
 ├── Architecture.md
