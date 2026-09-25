@@ -68,7 +68,10 @@ def run() -> Path:
         base_url=config.api_base_url,
         timeout_seconds=config.request_timeout_seconds,
     ) as client:
-        response = client.get_compromised_account_updates(limit=limit)
+        response = client.get_compromised_account_updates(
+            limit=limit,
+            sequence_date=report_date,
+        )
 
     records = normalize_response(response.items)
 
