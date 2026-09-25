@@ -214,12 +214,16 @@ Complete authentication and response-schema verification using the bounded probe
 ### PHASE 3 — Daily Retrieval & Normalization
 Implement the verified Group-IB client and canonical daily record model.
 
-**Implementation complete; local executable validation pending.** The verified client uses Basic authentication and the verified `compromised/account_group/updated` endpoint. Provider responses are validated before normalization. Canonical records use provider record identity when available and a deterministic SHA-256 fallback otherwise. Sensitive password/session fields are excluded from the canonical model.
+**Status: COMPLETE.** The verified client uses Basic authentication and the verified `compromised/account_group/updated` endpoint. Provider responses are validated before normalization. Canonical records use provider record identity when available and a deterministic SHA-256 fallback otherwise. Sensitive password/session fields are excluded from the canonical model.
 
 Pagination/incremental retrieval parameters are deliberately deferred until independently verified.
 
 ### PHASE 4 — Local History & NEW/OLD Classification
 Implement deterministic identity, first/last local observation and repeat-safe classification.
+
+**Implementation complete; local executable validation pending.** SQLite history and deterministic NEW / OLD/HISTORICAL / RESEEN/RECYCLED / REPEAT classification are implemented, including durable provider timeline bounds and repeat-safe upserts.
+
+After validation, the next gate is Phase 5 — Quick View & Donut Charts.
 
 ### PHASE 5 — Quick View & Donut Charts
 Build the report summary and data-driven charts.
