@@ -35,13 +35,15 @@ def _objects(value: Any) -> tuple[Mapping[str, Any], ...]:
 class CanonicalGroupIBRecord:
     """Stable internal representation of one provider compromise record.
 
-    Sensitive provider fields such as passwords are deliberately absent.
+    Passwords are retained only because the project owner explicitly requested
+    credential visibility in the operational PDF report.
     """
 
     provider_record_id: str | None
     compromise_identity: str
     account: str | None
     username: str | None
+    password: str | None
     domain: str | None
     date_first_compromised: str | None
     date_last_compromised: str | None
@@ -91,7 +93,7 @@ def _fallback_identity(
 
 
 def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
-    """Normalize one verified provider item without retaining secret fields."""
+    """Normalize one verified provider item for operational reporting."""
     events = _objects(item.get("events"))
     parsed_login = _object(item.get("parsedLogin"))
     service = _object(item.get("service"))
@@ -99,6 +101,16 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
     provider_record_id = _text(item.get("id"))
     account = _text(item.get("login"))
     username = _text(item.get("login"))
+    password = _text(item.get("password"))
+    if password is None:
+        password = next(
+            (
+                value
+                for value in (_text(event.get("password")) for event in events)
+                if value
+            ),
+            None,
+        )
     domain = _text(parsed_login.get("domain"))
 
     first_seen = _text(item.get("dateFirstSeen"))
@@ -278,7 +290,7 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
         "victim_providers": victim_providers,
         "source_links": source_links,
         "source_names": source_names,
-        "credential_present": bool(_text(item.get("password"))),
+        "credential_present": password is not None,
     }
     encoded = json.dumps(
         observation_material,
@@ -291,6 +303,7 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
         compromise_identity=compromise_identity,
         account=account,
         username=username,
+        password=password,
         domain=domain,
         date_first_compromised=first_compromised,
         date_last_compromised=last_compromised,
