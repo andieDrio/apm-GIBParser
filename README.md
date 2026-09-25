@@ -145,10 +145,10 @@ REPEAT
 
 ## Current Phase
 
-**PHASE 3 — Daily Retrieval & Normalization — IMPLEMENTED; VALIDATION PENDING**
+**PHASE 4 — Local History & NEW/OLD Classification — IMPLEMENTED; VALIDATION PENDING**
 
-Phase 1 and Phase 2 are complete. Phase 3 now has the verified provider client, canonical normalization boundary, deterministic identity fallback, observation fingerprinting, and executable unit tests.
+Phase 1 and Phase 2 are complete, and Phase 3 has passed its executable validation. Phase 4 now has SQLite durable history, deterministic NEW / OLD / RESEEN / REPEAT classification, local first/last observation tracking, provider timeline preservation, and repeat-safe upserts.
 
-After the local test suite passes, the next gate is **PHASE 4 — Local History & NEW/OLD Classification**.
+After the Phase 4 test suite passes, the next gate is **PHASE 5 — Quick View & Donut Charts**.
 
 Pagination/incremental retrieval parameters remain intentionally deferred until independently verified.
