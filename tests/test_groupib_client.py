@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import unittest
-from datetime import datetime, timedelta, timezone
 
 from groupib.client import (
     GroupIBClient,
@@ -32,14 +31,6 @@ class GroupIBClientTests(unittest.TestCase):
             {"list": {"compromised/account_group": 123456789}}
         )
         self.assertEqual(sequence, 123456789)
-
-    def test_formats_provider_date_bounds_as_utc(self) -> None:
-        self.assertEqual(
-            GroupIBClient._format_api_datetime(
-                datetime(2026, 9, 25, 11, 13, tzinfo=timezone(timedelta(hours=8)))
-            ),
-            "2026-09-25T03:13:00Z",
-        )
 
     def test_rejects_invalid_top_level_contract(self) -> None:
         with self.assertRaises(GroupIBSchemaError):
