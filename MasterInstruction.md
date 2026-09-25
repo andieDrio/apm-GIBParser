@@ -176,7 +176,7 @@ Keep this separate from NEW and include:
 Reports should be generated automatically as:
 
 ```
-reports/GroupIB_Daily_Report_YYYY-MM-DD.pdf
+reports/GIB_DailyReport_YYYY-MM-DD.pdf
 ```
 
 ## Permanent Development Loop
