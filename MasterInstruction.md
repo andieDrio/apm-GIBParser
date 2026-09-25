@@ -53,7 +53,8 @@ No browser interaction should be required to generate the daily report.
 - Group-IB compromised-account intelligence.
 - Daily new-compromise monitoring.
 - Separation of previously known/old accounts from daily new compromises.
-- Compromised Date, First Seen and Last Seen visibility.
+- Compromised Date, Date Detected, First Seen and Last Seen visibility.
+- Dedicated Source Link as the final account-table column.
 - Infostealer fields when explicitly supplied by Group-IB.
 - Source/collection fields when explicitly supplied by Group-IB.
 - Threat-actor fields when explicitly supplied by Group-IB.
@@ -156,11 +157,17 @@ Do not create charts for unavailable or fabricated fields.
 Include a table with useful fields such as:
 - full account/email identifier for operational correlation
 - domain
+- compromised date (PHT)
+- date detected (PHT)
 - first seen (PHT)
 - last seen (PHT)
-- color-coded stealer
-- color-coded source
+- victim's login
+- password
+- victim IP
+- source
+- color-coded stealer / malware
 - threat actor
+- Source Link as the final column
 
 Only include fields actually available.
 
@@ -168,10 +175,16 @@ Only include fields actually available.
 Keep this separate from NEW and include:
 - full account/email identifier
 - domain
+- compromised date (PHT)
+- date detected (PHT)
 - first seen (PHT)
 - last seen (PHT)
-- color-coded stealer
-- color-coded source
+- victim's login
+- password
+- victim IP
+- source
+- color-coded stealer / malware
+- Source Link as the final column
 
 ### Monitoring Window
 The report covers the **previous 24 hours ending at the exact time the script runs**, in Philippines Time (Asia/Manila).
