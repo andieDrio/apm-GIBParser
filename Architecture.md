@@ -47,6 +47,17 @@ The system produces a PDF; it does not require a browser dashboard.
              reports/GroupIB_...
 ```
 
+## Daily Monitoring Window
+
+The operational reporting window is the full calendar day in Philippines Time (Asia/Manila):
+
+```text
+Start Time: 12:00 Midnight
+End Time:   11:59 PM
+```
+
+The provider retrieval boundary remains the verified `compromised/account_group/updated` contract. Unverified provider-side date-range parameters must not be introduced by assumption.
+
 ## One-Command Entry Point
 
 ```bash
