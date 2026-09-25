@@ -72,7 +72,13 @@ The daily report keeps a rolling 24-hour **reporting window**, but provider acqu
 - verified infostealer counts
 
 ### NEW Compromises
-A separate section for accounts that are newly observed according to the project's durable local-history rules.
+A separate section for accounts that are newly observed according to the project's durable local-history rules and whose provider compromise/detection timeline falls within the default 7-day NEW window.
+
+### NEW Compromise Trend
+The PDF includes a dedicated seven-day bar chart showing NEW compromised-account counts by provider compromise/detection date.
+
+### NEWLY DETECTED
+The report separately displays the number of provider records with a Date Detected timestamp in the last 7 days.
 
 ### OLD / HISTORICAL
 A separate section for previously known or historically dated compromises.
