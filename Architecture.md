@@ -158,15 +158,16 @@ Infostealer Records
 
 Additional metrics are allowed only when supported by actual data.
 
-### 6. Donut Charts
+### 6. Professional Bar Charts
 
-Keep charts intentionally limited.
+Keep charts intentionally limited and operational.
 
-Recommended:
-1. NEW vs OLD / HISTORICAL.
-2. Infostealer family distribution.
-3. Source/collection distribution when available.
-4. Target-domain distribution when materially useful.
+The current PDF presentation uses:
+1. one boxed panel combining infostealer-family and source/collection distributions;
+2. one separate boxed target-domain distribution panel;
+3. multiple bar colors to improve visual correlation.
+
+The NEW-vs-OLD chart is intentionally omitted from the visual Quick View layout.
 
 No chart should exist solely to make the report look busy.
 
@@ -178,26 +179,25 @@ Recommended structure:
 
 **Page 1 — Daily Quick View**
 - title/date
-- summary metrics
-- donut charts
-- short operational summary
+- Asia/Manila (PHT) timezone indicator
+- boxed color-coded bar-chart panels
+- combined infostealer/source panel
+- separate target-domain panel
 
 **Page 2+ — NEW Compromises**
-- masked account
+- full account/email identifier for operational correlation
 - domain
-- first seen
-- last seen
-- stealer
-- source
+- First Seen (PHT)
+- Last Seen (PHT)
+- color-coded stealer/source fields
 - threat actor where supplied
 
 **Following section — OLD / HISTORICAL**
-- masked account
+- full account/email identifier
 - domain
-- first seen
-- last seen
-- stealer
-- source
+- First Seen (PHT)
+- Last Seen (PHT)
+- color-coded stealer/source fields
 
 Long tables should paginate cleanly.
 
@@ -211,7 +211,7 @@ Do not include by default:
 - API tokens;
 - authorization headers.
 
-Mask account/email identifiers in the report.
+Account/email identifiers are intentionally shown in full for operational report correlation.
 
 Raw provider payload retention is optional and must be explicitly bounded if later introduced.
 
@@ -229,9 +229,9 @@ Partial output must not be presented as a successful daily report.
 
 ## Current Phase
 
-**PHASE 4 — Local History & NEW/OLD Classification**
+**PHASE 6 — One-Command PDF Reporting & Presentation**
 
-Phase 3 executable validation has passed. Phase 4 implementation is in place; final phase completion requires the local executable history/classification test suite to pass.
+Phases 1–5 are implemented. Phase 6 now includes one-command PDF generation, professional boxed color bar charts, full account correlation, and provider timestamp conversion to Asia/Manila (PHT). Runtime/presentation validation is the active gate.
 
 Completed gates:
 - Phase 1 — focused daily-monitoring architecture.
@@ -260,6 +260,6 @@ Phase 4 implementation provides:
 - repeat-safe transactional upsert behavior.
 
 Next after validation:
-**PHASE 5 — Quick View & Donut Charts**
+**PHASE 7 — End-to-End Validation**
 
 Pagination/incremental retrieval parameters remain intentionally unimplemented until their runtime parameter contract is independently verified.
