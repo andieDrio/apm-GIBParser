@@ -143,11 +143,12 @@ The daily PDF should be concise and operational.
 - other verified high-value daily metrics
 
 ### Charts
-Use a restrained set of donut charts, for example:
-- NEW vs OLD/HISTORICAL
-- infostealer family distribution
-- source/collection distribution when the provider supplies it
-- target-domain distribution when useful
+Use a restrained set of professional bar-chart panels:
+- infostealer family distribution;
+- source/collection distribution;
+- target-domain distribution when useful.
+
+The current layout intentionally combines infostealer families and sources into one boxed panel and keeps target domains in a separate boxed panel. The previous NEW-vs-OLD chart is omitted.
 
 Do not create charts for unavailable or fabricated fields.
 
@@ -240,7 +241,7 @@ Implement deterministic identity, first/last local observation and repeat-safe c
 After Phase 4 validation, the next gates are Phase 5 — Quick View & Professional Bar Charts, then Phase 6 — One-Command PDF Reporting & Presentation.
 
 ### PHASE 5 — Quick View & Professional Bar Charts
-Build the report summary and data-driven color bar-chart panels.
+**Status: IMPLEMENTED.** Build the report summary and data-driven color bar-chart panels from actual provider data.
 
 ### PHASE 6 — One-Command PDF Reporting & Presentation
 Connect retrieval, classification, summary and professional ReportLab PDF generation behind `python daily_report.py`, including boxed charts, full account correlation, and Asia/Manila timestamp presentation.
