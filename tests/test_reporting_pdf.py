@@ -113,6 +113,7 @@ class PdfReportTests(unittest.TestCase):
                 "2026-09-25",
                 classifications,
                 records,
+                report_end=datetime(2026, 9, 25, 10, 0, tzinfo=timezone.utc),
             )
             output = root / "reports" / "GIB_DailyReport_2026-09-25_1000.pdf"
             generated = generate_daily_report(
@@ -123,6 +124,9 @@ class PdfReportTests(unittest.TestCase):
                 metrics=metrics,
                 classifications=classifications,
                 records=records,
+                run_id="2026-09-25_1000",
+                retrieved_count=2,
+                normalized_count=2,
             )
 
             self.assertEqual(generated, output)
