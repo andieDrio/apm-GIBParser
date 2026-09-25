@@ -185,20 +185,26 @@ def run() -> Path:
             observed_at=observed_at,
             newness_window_days=newness_window_days,
         )
-
-    metrics = build_quick_view(report_date, classifications, records)
-    return generate_daily_report(
-        output_path,
-        report_date=report_date,
-        window_start=window.start,
-        window_end=window.end,
-        metrics=metrics,
-        classifications=classifications,
-        records=records,
-        run_id=output_stamp,
-        retrieved_count=len(response.items),
-        normalized_count=len(records),
-    )
+        previous_run = history.get_latest_daily_run()
+        metrics = build_quick_view(
+            report_date,
+            classifications,
+            records,
+            report_end=window.end,
+            previous_run=previous_run,
+        )
+        generated = generate_daily_report(
+            output_path,
+            report_date=report_date,
+            window_start=window.start,
+            window_end=window.end,
+            metrics=metrics,
+            classifications=classifications,
+            records=records,
+            run_id=output_stamp,
+            retrieved_count=len(response.items),
+            normalized_count=len(records),
+        )
         history.record_daily_run(
             run_id=output_stamp,
             report_start=window.start,
@@ -207,9 +213,12 @@ def run() -> Path:
             new_compromises=metrics.new_compromises,
             newly_detected_7d=metrics.newly_detected_7d,
             historical_records=metrics.old_historical,
-            target_domains=tuple(domain for domain, _ in metrics.target_domain_counts),
+            target_domains=tuple(
+                domain for domain, _ in metrics.target_domain_counts
+            ),
         )
     return generated
+
 
 
 def main() -> int:
