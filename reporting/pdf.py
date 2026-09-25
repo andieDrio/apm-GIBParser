@@ -25,7 +25,11 @@ from reportlab.platypus import (
 )
 
 from groupib.normalizer import CanonicalGroupIBRecord
-from reporting.charts import distribution_panel, paired_distribution_panel
+from reporting.charts import (
+    distribution_panel,
+    paired_distribution_panel,
+    seven_day_trend_panel,
+)
 from reporting.summary import QuickViewMetrics
 from storage.classifier import ClassificationResult, NEW, OLD, REPEAT, RESEEN
 
@@ -487,8 +491,20 @@ def generate_daily_report(
             note,
         ),
         PageBreak(),
+        seven_day_trend_panel(
+            "NEW COMPROMISED ACCOUNTS — LAST 7 DAYS",
+            metrics.new_compromise_7d_daily_counts,
+        ),
+        Spacer(1, 6),
+        Paragraph(
+            f"<b>{len(new_records)}</b> newly observed compromise records in this run "
+            f"&nbsp;•&nbsp; <b>{metrics.newly_detected_7d}</b> records detected by "
+            "Group-IB in the last 7 days",
+            note,
+        ),
+        Spacer(1, 8),
         _section_banner(
-            f"Compromised Accounts — NEW ({len(new_records)})",
+            f"NEW COMPROMISED ACCOUNTS — LAST 7 DAYS ({len(new_records)})",
             background="#E0F2FE",
             border="#7DD3FC",
         ),
@@ -525,8 +541,9 @@ def generate_daily_report(
         [
             Spacer(1, 8),
             Paragraph(
-                "Classification is based on durable local history and the verified "
-                "Group-IB provider timeline. RESEEN/RECYCLED and REPEAT records are "
+                "NEW uses the recent provider compromise/detection timeline plus durable "
+                "local history. The seven-day chart groups NEW records by their provider "
+                "compromise/detection date. RESEEN/RECYCLED and REPEAT records are "
                 "included in the historical/known population. Provider-supplied "
                 "login/password fields are included by explicit project-owner request; "
                 "API tokens and session cookies are excluded.",
