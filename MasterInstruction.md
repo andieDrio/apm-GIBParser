@@ -183,7 +183,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-The verified Group-IB TI&A documentation defines `df` (date from) and `dt` (date to) parameters for the `updated` endpoint and requires the `sequence_list` bootstrap for the incremental retrieval flow. The implementation uses both, then applies an exact local timestamp filter using `dateLastSeen` with `dateFirstSeen` fallback. No unverified provider-side parameter is invented.
+The verified Group-IB TI&A documentation supports `df` / `dt` parameters, but the latest-data path intentionally does **not** send them. It uses only `sequence_list` → `seqUpdate` → repeated `updated` requests, matching the verified incremental retrieval procedure. The application then applies the exact rolling 24-hour window locally using `dateLastSeen` with `dateFirstSeen` fallback. This separates provider latest-data acquisition from local reporting-window selection.
 
 ## Reporting File Convention
 Reports should be generated automatically as:
@@ -230,7 +230,7 @@ Implement the verified Group-IB client and canonical daily record model.
 
 **Status: COMPLETE.** The verified client uses Basic authentication and the verified `compromised/account_group/updated` endpoint. Provider responses are validated before normalization. Canonical records use provider record identity when available and a deterministic SHA-256 fallback otherwise. Sensitive password/session fields are excluded from the canonical model.
 
-Sequence-based incremental retrieval is verified and implemented. The provider documentation also verifies `df` / `dt` date bounds for the updated endpoint; the implementation uses them together with the sequence cursor and exact local filtering.
+Sequence-based incremental retrieval is verified and implemented. The latest-data path intentionally retrieves by sequence cursor only, then applies the exact local monitoring window after normalization. Provider-side `df` / `dt` are not used in this path because latest-data acquisition must remain independent of the report window.
 
 ### PHASE 4 — Local History & NEW/OLD Classification
 Implement deterministic identity, first/last local observation and repeat-safe classification.
@@ -246,7 +246,9 @@ Build the report summary and data-driven color bar-chart panels.
 Connect retrieval, classification, summary and professional ReportLab PDF generation behind `python daily_report.py`, including boxed charts, full account correlation, and Asia/Manila timestamp presentation.
 
 ### PHASE 7 — End-to-End Validation
-Validate repeated runs, old-record handling, new-record detection, report generation, redaction and failure behavior.
+Validate repeated runs, old-record handling, new-record detection, report generation, redaction, latest-provider-data acquisition, and failure behavior.
+
+**Current active gate:** prove the live provider latest-data boundary independently from the PDF/history pipeline using `tools/groupib_latest_data_probe.py`, then validate the full rolling-window report run.
 
 ## Completion Standard
 A phase is complete only when implementation and validation evidence exist. After each gate document:
