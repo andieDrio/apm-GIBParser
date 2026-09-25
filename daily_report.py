@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 import os
 from pathlib import Path
 import sys
@@ -19,6 +20,7 @@ DEFAULT_LIMIT = 500
 DEFAULT_NEWNESS_WINDOW_DAYS = 1
 DEFAULT_REPORT_DIRECTORY = Path("reports")
 DEFAULT_HISTORY_PATH = Path("data/groupib_history.db")
+PHILIPPINES_TZ = ZoneInfo("Asia/Manila")
 
 
 def _positive_int(value: str | None, *, default: int, name: str) -> int:
@@ -57,7 +59,7 @@ def run() -> Path:
     )
 
     observed_at = datetime.now(timezone.utc)
-    report_date = observed_at.date().isoformat()
+    report_date = observed_at.astimezone(PHILIPPINES_TZ).date().isoformat()
     output_path = DEFAULT_REPORT_DIRECTORY / f"GroupIB_Daily_Report_{report_date}.pdf"
 
     with GroupIBClient(
