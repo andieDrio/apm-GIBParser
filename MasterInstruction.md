@@ -54,6 +54,8 @@ No browser interaction should be required to generate the daily report.
 - Daily new-compromise monitoring.
 - Separation of previously known/old accounts from daily new compromises.
 - Compromised Date, Date Detected, First Seen and Last Seen visibility.
+- NEW is evaluated with a default 7-day provider compromise/detection window.
+- A dedicated seven-day NEW compromise trend chart is included in the PDF.
 - Dedicated Source Link as the final account-table column.
 - Infostealer fields when explicitly supplied by Group-IB.
 - Source/collection fields when explicitly supplied by Group-IB.
