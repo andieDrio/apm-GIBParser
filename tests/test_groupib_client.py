@@ -26,6 +26,12 @@ class GroupIBClientTests(unittest.TestCase):
         self.assertEqual(len(response.items), 1)
         self.assertEqual(response.items[0]["id"], "record-001")
 
+    def test_parses_sequence_list_cursor(self) -> None:
+        sequence = GroupIBClient._parse_sequence_update(
+            {"list": {"compromised/account_group": 123456789}}
+        )
+        self.assertEqual(sequence, 123456789)
+
     def test_rejects_invalid_top_level_contract(self) -> None:
         with self.assertRaises(GroupIBSchemaError):
             GroupIBClient._parse_response({"count": "1", "seqUpdate": 42, "items": []})
