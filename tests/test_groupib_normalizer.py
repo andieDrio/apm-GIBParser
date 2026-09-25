@@ -59,6 +59,7 @@ class GroupIBNormalizerTests(unittest.TestCase):
             "source": [
                 {
                     "id": "https://t.me/example/123",
+                    "name": "TG bot",
                     "type": "Private channel",
                 }
             ],
