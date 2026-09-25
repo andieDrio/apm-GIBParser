@@ -75,7 +75,12 @@ class QuickViewTests(unittest.TestCase):
                     for record in records
                 )
 
-        metrics = build_quick_view("2026-09-25", classifications, records)
+        metrics = build_quick_view(
+            "2026-09-25",
+            classifications,
+            records,
+            report_end=datetime(2026, 9, 25, 10, 0, tzinfo=timezone.utc),
+        )
 
         self.assertEqual(metrics.total_records, 2)
         self.assertEqual(metrics.new_compromises, 1)
@@ -92,6 +97,10 @@ class QuickViewTests(unittest.TestCase):
             ),
         )
         self.assertEqual(metrics.newly_detected_7d, 0)
+        self.assertEqual(metrics.new_compromise_7d_total, 1)
+        self.assertEqual(metrics.new_compromise_7d_average, 1 / 7)
+        self.assertEqual(metrics.newly_affected_domain_counts, (("example.test", 1),))
+        self.assertIsNone(metrics.previous_run)
         self.assertEqual(metrics.old_historical, 1)
         self.assertEqual(metrics.reseen_recycled, 0)
         self.assertEqual(metrics.repeat_records, 0)
@@ -102,6 +111,50 @@ class QuickViewTests(unittest.TestCase):
             metrics.target_domain_counts,
             (("example.test", 1), ("old.example.test", 1)),
         )
+
+    def test_daily_delta_and_new_domains_use_previous_successful_run(self) -> None:
+        records = (
+            make_record(
+                record_id="new-002",
+                login="new2@example.test",
+                first_seen="2026-09-25T01:00:00Z",
+                event_id="event-new-2",
+                source_type="stealer-log",
+                domain="new.example.test",
+            ),
+        )
+        previous = __import__("storage.history", fromlist=["DailyRunSummary"]).DailyRunSummary(
+            run_id="2026-09-24_1000",
+            report_start="2026-09-23T10:00:00+00:00",
+            report_end="2026-09-24T10:00:00+00:00",
+            total_records=5,
+            new_compromises=3,
+            newly_detected_7d=2,
+            historical_records=2,
+            target_domains=("old.example.test",),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            with HistoryStore(Path(directory) / "history.db") as store:
+                classifications = tuple(
+                    classify_record(
+                        store,
+                        record,
+                        observed_at=OBSERVED_AT,
+                        newness_window_days=7,
+                    )
+                    for record in records
+                )
+        metrics = build_quick_view(
+            "2026-09-25",
+            classifications,
+            records,
+            report_end=OBSERVED_AT,
+            previous_run=previous,
+        )
+        self.assertEqual(metrics.delta_new_compromises, -2)
+        self.assertEqual(metrics.delta_newly_detected_7d, -2)
+        self.assertEqual(metrics.delta_total_records, -4)
+        self.assertEqual(metrics.newly_affected_domain_counts, (("new.example.test", 1),))
 
     def test_metrics_reject_misaligned_inputs(self) -> None:
         record = make_record(
