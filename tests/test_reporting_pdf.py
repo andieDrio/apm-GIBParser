@@ -29,10 +29,31 @@ def make_record(*, record_id: str, login: str, first_seen: str) -> object:
             "login": login,
             "dateFirstSeen": first_seen,
             "dateLastSeen": first_seen,
-            "events": [{"id": f"event-{record_id}"}],
+            "events": [
+                {
+                    "id": f"event-{record_id}",
+                    "dateCompromised": first_seen,
+                    "client": {
+                        "ipv4": {
+                            "ip": "192.0.2.10",
+                            "countryName": "Philippines",
+                            "city": "Quezon City",
+                            "provider": "Example ISP",
+                        }
+                    },
+                }
+            ],
             "sourceType": ["stealer-log"],
+            "source": [
+                {
+                    "type": "Private channel",
+                    "url": "https://t.me/example/123",
+                }
+            ],
             "malware": [{"id": "malware-1", "name": "ExampleStealer"}],
             "parsedLogin": {"domain": "example.test"},
+            "password": "plaintext-secret-must-not-be-rendered",
+            "service": {"url": "https://example.test/login"},
         }
     )
 
@@ -107,7 +128,7 @@ class PdfReportTests(unittest.TestCase):
 
             payload = output.read_bytes()
             self.assertTrue(payload.startswith(b"%PDF-"))
-            self.assertNotIn(b"password", payload.lower())
+            self.assertNotIn(b"plaintext-secret-must-not-be-rendered", payload)
 
 
 if __name__ == "__main__":
