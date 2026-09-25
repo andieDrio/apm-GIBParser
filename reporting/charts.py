@@ -210,6 +210,91 @@ def distribution_panel(
     return drawing
 
 
+
+def seven_day_trend_panel(
+    title: str,
+    values: Iterable[tuple[str, int]],
+) -> Drawing:
+    """Return a compact seven-day NEW compromise bar chart."""
+    data = tuple(values)
+    drawing = Drawing(740, 145)
+    drawing.add(
+        Rect(
+            2,
+            2,
+            736,
+            141,
+            fillColor=colors.white,
+            strokeColor=colors.HexColor("#93C5FD"),
+            strokeWidth=0.8,
+        )
+    )
+    drawing.add(
+        String(
+            370,
+            123,
+            title,
+            textAnchor="middle",
+            fontName="Helvetica-Bold",
+            fontSize=9,
+            fillColor=colors.HexColor("#172554"),
+        )
+    )
+    if not data:
+        drawing.add(
+            String(
+                370,
+                68,
+                "No verified data",
+                textAnchor="middle",
+                fontName="Helvetica",
+                fontSize=8,
+                fillColor=colors.HexColor("#64748B"),
+            )
+        )
+        return drawing
+
+    max_value = max(count for _, count in data)
+    baseline = 28
+    chart_height = 78
+    slot_width = 700 / max(len(data), 1)
+    for index, (label, count) in enumerate(data):
+        center_x = 20 + slot_width * index + slot_width / 2
+        bar_height = chart_height * count / max_value if max_value else 0
+        drawing.add(
+            Rect(
+                center_x - min(28, slot_width * 0.28),
+                baseline,
+                min(56, slot_width * 0.56),
+                bar_height,
+                fillColor=BAR_PALETTE[index % len(BAR_PALETTE)],
+                strokeWidth=0,
+            )
+        )
+        drawing.add(
+            String(
+                center_x,
+                baseline + bar_height + 5,
+                str(count),
+                textAnchor="middle",
+                fontName="Helvetica-Bold",
+                fontSize=6.8,
+                fillColor=colors.HexColor("#0F172A"),
+            )
+        )
+        drawing.add(
+            String(
+                center_x,
+                16,
+                label[5:],
+                textAnchor="middle",
+                fontName="Helvetica",
+                fontSize=6.8,
+                fillColor=colors.HexColor("#475569"),
+            )
+        )
+    return drawing
+
 def new_vs_historical(*, new_count: int, historical_count: int) -> Drawing | None:
     """Return the legacy NEW-vs-historical chart for compatibility."""
     data = _data((("NEW", new_count), ("OLD / HISTORICAL", historical_count)))
