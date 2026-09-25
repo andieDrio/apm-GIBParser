@@ -79,6 +79,19 @@ class QuickViewTests(unittest.TestCase):
 
         self.assertEqual(metrics.total_records, 2)
         self.assertEqual(metrics.new_compromises, 1)
+        self.assertEqual(
+            metrics.new_compromise_7d_daily_counts,
+            (
+                ("2026-09-19", 0),
+                ("2026-09-20", 0),
+                ("2026-09-21", 0),
+                ("2026-09-22", 0),
+                ("2026-09-23", 0),
+                ("2026-09-24", 0),
+                ("2026-09-25", 1),
+            ),
+        )
+        self.assertEqual(metrics.newly_detected_7d, 0)
         self.assertEqual(metrics.old_historical, 1)
         self.assertEqual(metrics.reseen_recycled, 0)
         self.assertEqual(metrics.repeat_records, 0)
