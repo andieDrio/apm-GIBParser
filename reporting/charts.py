@@ -7,13 +7,17 @@ from collections.abc import Iterable
 from reportlab.graphics.shapes import Drawing, Rect, String
 
 
+MAX_CATEGORIES = 18
+MAX_CHART_HEIGHT = 450
+
+
 def _chart(title: str, values: Iterable[tuple[str, int]]) -> Drawing | None:
     data = tuple((str(label), count) for label, count in values if count > 0)
     if not data:
         return None
 
-    data = tuple(sorted(data, key=lambda item: (-item[1], item[0].casefold())))
-    drawing = Drawing(360, max(150, 42 + 22 * len(data)))
+    data = tuple(sorted(data, key=lambda item: (-item[1], item[0].casefold())))[:MAX_CATEGORIES]
+    drawing = Drawing(360, min(MAX_CHART_HEIGHT, max(150, 42 + 22 * len(data))))
 
     max_value = max(count for _, count in data)
     chart_left = 145
