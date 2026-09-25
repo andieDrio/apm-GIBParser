@@ -302,12 +302,12 @@ After Phase 4 validation, the next gates are Phase 5 — Quick View & Profession
 **Status: IMPLEMENTED.** Build the report summary and data-driven color bar-chart panels from actual provider data.
 
 ### PHASE 6 — One-Command PDF Reporting & Presentation
-Connect retrieval, classification, summary and professional ReportLab PDF generation behind `python daily_report.py`, including boxed charts, full account correlation, and Asia/Manila timestamp presentation.
+**Status: IMPLEMENTED.** Connect retrieval, classification, summary and professional ReportLab PDF generation behind `python daily_report.py`, including boxed charts, full account correlation, Asia/Manila timestamp presentation, Executive Summary, Daily Delta, newly affected domains, seven-day total/average, and run/data-quality metadata.
 
 ### PHASE 7 — End-to-End Validation
-Validate repeated runs, old-record handling, new-record detection, report generation, redaction, latest-provider-data acquisition, and failure behavior.
+Validate repeated runs, old-record handling, new-record detection, report generation, credential visibility policy, latest-provider-data acquisition, daily-run baseline persistence, and failure behavior.
 
-**Current active gate:** validate the live bounded latest-data account retrieval against the Group-IB dashboard population, then validate the full rolling-window report run.
+**Current active gate:** execute the repository unit-test gate and then perform the real `python daily_report.py` runtime validation against the configured Group-IB account. Confirm the first successful run establishes a baseline and the second successful run produces a meaningful Daily Delta.
 
 ## Completion Standard
 A phase is complete only when implementation and validation evidence exist. After each gate document:
