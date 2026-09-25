@@ -63,6 +63,7 @@ No browser interaction should be required to generate the daily report.
 - Target domain/service fields when explicitly supplied by Group-IB.
 - Quick View summary.
 - Professional bar charts based only on actual provider data.
+- Deterministic evidence-based daily assessment with explicit activity level, confidence, facts, observations, assessment basis and analyst-attention items.
 - Philippines Time (Asia/Manila/PHT) display for provider timestamps.
 - Server/local PDF generation.
 
@@ -304,10 +305,10 @@ After Phase 4 validation, the next gates are Phase 5 — Quick View & Profession
 ### PHASE 6 — One-Command PDF Reporting & Presentation
 **Status: IMPLEMENTED.** Connect retrieval, classification, summary and professional ReportLab PDF generation behind `python daily_report.py`, including boxed charts, full account correlation, Asia/Manila timestamp presentation, Executive Summary, Daily Delta, newly affected domains, seven-day total/average, and run/data-quality metadata.
 
-### PHASE 7 — End-to-End Validation
-Validate repeated runs, old-record handling, new-record detection, report generation, credential visibility policy, latest-provider-data acquisition, daily-run baseline persistence, and failure behavior.
+### PHASE 7 — End-to-End Validation & Assessment
+Validate repeated runs, old-record handling, new-record detection, report generation, credential visibility policy, latest-provider-data acquisition, daily-run baseline persistence, failure behavior, and deterministic evidence-based assessment output.
 
-**Current active gate:** execute the repository unit-test gate and then perform the real `python daily_report.py` runtime validation against the configured Group-IB account. Confirm the first successful run establishes a baseline and the second successful run produces a meaningful Daily Delta.
+**Current active gate:** execute the repository unit-test gate and then perform the real `python daily_report.py` runtime validation against the configured Group-IB account. Confirm the assessment is populated from actual metrics, the first successful run reports limited confidence because no baseline exists, and the second successful run produces both a meaningful Daily Delta and baseline-aware assessment.
 
 ## Completion Standard
 A phase is complete only when implementation and validation evidence exist. After each gate document:
