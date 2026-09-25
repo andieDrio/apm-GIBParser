@@ -184,7 +184,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-The verified Group-IB TI&A documentation supports `df` / `dt` parameters, but the latest-data path intentionally does **not** send them. It uses only `sequence_list` → `seqUpdate` → repeated `updated` requests, matching the verified incremental retrieval procedure. The application then applies the exact rolling 24-hour window locally using `dateLastSeen` with `dateFirstSeen` fallback. This separates provider latest-data acquisition from local reporting-window selection.
+The verified Group-IB TI&A documentation supports `df` / `dt` parameters, but the latest-data path intentionally does **not** send them. It uses only `sequence_list` → `seqUpdate` → repeated `updated` requests, matching the verified incremental retrieval procedure. The report uses the rolling 24-hour PHT interval as run context, while the returned records are retained according to the provider's sequence-update stream. `dateLastSeen` / `dateFirstSeen` are compromise timeline fields and must not be treated as provider-update timestamps. This prevents current sequence updates from being discarded merely because the underlying compromise was first/last seen in an older year.
 
 ## Reporting File Convention
 Reports should be generated automatically as:
@@ -231,7 +231,7 @@ Implement the verified Group-IB client and canonical daily record model.
 
 **Status: COMPLETE.** The verified client uses Basic authentication and the verified `compromised/account_group/updated` endpoint. Provider responses are validated before normalization. Canonical records use provider record identity when available and a deterministic SHA-256 fallback otherwise. Sensitive password/session fields are excluded from the canonical model.
 
-Sequence-based incremental retrieval is verified and implemented. The latest-data path intentionally retrieves by sequence cursor only, then applies the exact local monitoring window after normalization. Provider-side `df` / `dt` are not used in this path because latest-data acquisition must remain independent of the report window.
+Sequence-based incremental retrieval is verified and implemented. The latest-data path intentionally retrieves by sequence cursor only. Returned records are not discarded using `dateLastSeen` / `dateFirstSeen`, because those fields describe the compromise timeline rather than provider update time. The rolling 24-hour PHT interval remains report run context until a verified provider-update timestamp is available.
 
 ### PHASE 4 — Local History & NEW/OLD Classification
 Implement deterministic identity, first/last local observation and repeat-safe classification.
