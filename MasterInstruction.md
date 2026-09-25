@@ -251,11 +251,10 @@ Every cycle MUST follow:
 
 ### Daily Operational Delta & Run Integrity
 
-The report should include, when a previous successful run exists:
-- NEW compromise delta versus the previous run;
-- newly detected seven-day delta;
-- total-record delta;
+The reporting engine should calculate, when a previous successful run exists:
 - newly affected target domains.
+
+Daily-delta values remain available to the assessment engine, but the standalone Daily Delta panel is intentionally omitted from the PDF presentation.
 
 The first successful run establishes the comparison baseline. A failed PDF generation must not be persisted as a successful daily-run baseline.
 
@@ -303,7 +302,7 @@ After Phase 4 validation, the next gates are Phase 5 — Quick View & Profession
 **Status: IMPLEMENTED.** Build the report summary and data-driven color bar-chart panels from actual provider data.
 
 ### PHASE 6 — One-Command PDF Reporting & Presentation
-**Status: IMPLEMENTED.** Connect retrieval, classification, summary and professional ReportLab PDF generation behind `python daily_report.py`, including boxed charts, full account correlation, Asia/Manila timestamp presentation, Executive Summary, Daily Delta, newly affected domains, seven-day total/average, and run/data-quality metadata.
+**Status: IMPLEMENTED.** Connect retrieval, classification, summary and professional ReportLab PDF generation behind `python daily_report.py`, including boxed charts, full account correlation, Asia/Manila timestamp presentation, Executive Summary, evidence-based Daily Threat Assessment, newly affected domains, seven-day total/average, and run/data-quality metadata.
 
 ### PHASE 7 — End-to-End Validation & Assessment
 Validate repeated runs, old-record handling, new-record detection, report generation, credential visibility policy, latest-provider-data acquisition, daily-run baseline persistence, failure behavior, and deterministic evidence-based assessment output.
