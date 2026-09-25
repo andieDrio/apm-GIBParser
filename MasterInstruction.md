@@ -246,7 +246,7 @@ Complete authentication and response-schema verification using the bounded probe
 ### PHASE 3 — Daily Retrieval & Normalization
 Implement the verified Group-IB client and canonical daily record model.
 
-**Status: COMPLETE.** The verified client uses Basic authentication and the verified `compromised/account_group/updated` endpoint. Provider responses are validated before normalization. Canonical records use provider record identity when available and a deterministic SHA-256 fallback otherwise. Sensitive password/session fields are excluded from the canonical model.
+**Status: COMPLETE.** The verified client uses Basic authentication and the verified `compromised/account_group/updated` endpoint. Provider responses are validated before normalization. Canonical records use provider record identity when available and a deterministic SHA-256 fallback otherwise. Provider-supplied login/password fields are retained for the explicitly requested operational report; API tokens and session cookies remain excluded.
 
 Sequence-based incremental retrieval is verified and implemented as a separate provider-update path. The daily report uses the bounded collection endpoint with a default 30-day lookback because the operational requirement is the current/latest account population, not merely accounts whose provider update sequence advanced during the last 24 hours. Returned records are not discarded using `dateLastSeen` / `dateFirstSeen` as an update-time filter.
 
