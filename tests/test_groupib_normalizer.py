@@ -8,7 +8,7 @@ from groupib.normalizer import normalize_record
 
 
 class GroupIBNormalizerTests(unittest.TestCase):
-    def test_normalizes_verified_shape_without_secret_fields(self) -> None:
+    def test_normalizes_verified_shape_for_operational_reporting(self) -> None:
         item = {
             "id": "record-001",
             "login": "user@example.test",
@@ -69,6 +69,8 @@ class GroupIBNormalizerTests(unittest.TestCase):
         self.assertEqual(record.provider_record_id, "record-001")
         self.assertEqual(record.compromise_identity, "provider:record-001")
         self.assertEqual(record.account, "user@example.test")
+        self.assertEqual(record.username, "user@example.test")
+        self.assertEqual(record.password, "must-never-enter-canonical-model")
         self.assertEqual(record.domain, "example.test")
         self.assertEqual(record.stealer_families, ("ExampleStealer",))
         self.assertEqual(record.event_ids, ("event-001",))
@@ -83,7 +85,6 @@ class GroupIBNormalizerTests(unittest.TestCase):
         self.assertEqual(record.source_links, ("https://t.me/example/123",))
         self.assertEqual(record.source_names, ("Private channel",))
         self.assertTrue(record.credential_present)
-        self.assertNotIn("password", record.__dataclass_fields__)
 
     def test_fallback_identity_is_deterministic(self) -> None:
         item = {
