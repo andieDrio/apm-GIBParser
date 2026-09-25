@@ -317,6 +317,7 @@ def _accounts_table(
 
     headers = [
         "Compromised Date",
+        "Date Detected",
         "First Seen",
         "Last Seen",
         "Victim's Domain",
@@ -330,7 +331,7 @@ def _accounts_table(
     ]
     # Keep the full table inside the 15 mm A4-landscape frame (735 pt).
     # Source Type stays omitted; Source Link is a dedicated final column.
-    widths = [60, 58, 58, 72, 82, 65, 52, 62, 60, 60, 106]
+    widths = [55, 55, 55, 66, 78, 62, 50, 56, 56, 56, 56, 90]
 
     rows: list[list[object]] = [[
         Paragraph(escape(header), header_style) for header in headers
@@ -348,6 +349,7 @@ def _accounts_table(
                         record.date_first_compromised or record.date_last_compromised
                     )
                 ),
+                value(format_ph_time(record.date_detected)),
                 value(format_ph_time(record.date_first_seen)),
                 value(format_ph_time(record.date_last_seen)),
                 value(_text(record.domain or record.service_domain)),
@@ -376,8 +378,9 @@ def _accounts_table(
                 ("BACKGROUND", (0, 1), (-1, -1), colors.white),
                 ("BACKGROUND", (0, 1), (1, -1), colors.HexColor("#F8FAFC")),
                 ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#FFFBEB")),
-                ("BACKGROUND", (1, 1), (1, -1), colors.HexColor("#EFF6FF")),
-                ("BACKGROUND", (2, 1), (2, -1), colors.HexColor("#F0FDF4")),
+                ("BACKGROUND", (1, 1), (1, -1), colors.HexColor("#F5F3FF")),
+                ("BACKGROUND", (2, 1), (2, -1), colors.HexColor("#EFF6FF")),
+                ("BACKGROUND", (3, 1), (3, -1), colors.HexColor("#F0FDF4")),
                 ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#CBD5E1")),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 3),
