@@ -33,7 +33,7 @@ PDF
 Output:
 
 ```
-reports/GroupIB_Daily_Report_YYYY-MM-DD.pdf
+reports/GIB_DailyReport_YYYY-MM-DD.pdf
 ```
 
 ## What the Daily Report Shows
