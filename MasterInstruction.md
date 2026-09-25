@@ -172,6 +172,13 @@ Keep this separate from NEW and include:
 - color-coded stealer
 - color-coded source
 
+### Daily Monitoring Window
+The daily report covers the full calendar day in Philippines Time (Asia/Manila):
+- Start Time: **12:00 Midnight**
+- End Time: **11:59 PM**
+
+The verified Group-IB provider contract currently does not establish start/end query parameters, so the implementation must not invent provider-side date filters.
+
 ## Reporting File Convention
 Reports should be generated automatically as:
 
