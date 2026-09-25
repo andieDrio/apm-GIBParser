@@ -186,6 +186,7 @@ class GroupIBClient:
 
         all_items: list[Mapping[str, Any]] = []
         result_id: str | None = None
+        seen_result_ids: set[str] = set()
         while True:
             try:
                 response = self._client.get(url, params=params)
@@ -202,10 +203,15 @@ class GroupIBClient:
 
             page = self._parse_slice_response(payload)
             all_items.extend(page.items)
-            result_id = page.result_id
-            if not page.items or not result_id:
+            next_result_id = page.result_id
+            if not page.items or not next_result_id:
                 break
-
+            if next_result_id in seen_result_ids:
+                raise GroupIBSchemaError(
+                    "Group-IB slice resultId did not advance."
+                )
+            seen_result_ids.add(next_result_id)
+            result_id = next_result_id
             params = {"resultId": result_id, "limit": limit}
 
         return GroupIBSliceResponse(
