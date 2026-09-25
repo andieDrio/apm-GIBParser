@@ -505,7 +505,7 @@ def _assessment_panel(assessment: AssessmentResult) -> Table:
         [Paragraph(escape(name), label), Paragraph(escape(value), body)]
         for name, value in assessment.basis
     ]
-    basis = Table(basis_rows, colWidths=[108, 90], hAlign="LEFT")
+    basis = Table(basis_rows, colWidths=[104, 86], hAlign="LEFT")
     basis.setStyle(
         TableStyle(
             [
@@ -535,7 +535,7 @@ def _assessment_panel(assessment: AssessmentResult) -> Table:
         [Paragraph("ASSESSMENT", label), Paragraph(escape(assessment.assessment), body)],
         [Paragraph("RECOMMENDED ANALYST ATTENTION", label), bullets(assessment.analyst_attention)],
     ]
-    narrative_table = Table(narrative, colWidths=[115, 405], hAlign="LEFT")
+    narrative_table = Table(narrative, colWidths=[112, 388], hAlign="LEFT")
     narrative_table.setStyle(
         TableStyle(
             [
@@ -552,8 +552,8 @@ def _assessment_panel(assessment: AssessmentResult) -> Table:
     )
     table = Table(
         [[narrative_table, basis]],
-        colWidths=[520, 203],
-        hAlign="LEFT",
+        colWidths=[505, 195],
+        hAlign="CENTER",
     )
     table.setStyle(
         TableStyle(
@@ -561,8 +561,8 @@ def _assessment_panel(assessment: AssessmentResult) -> Table:
                 ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
                 ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor("#93C5FD")),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 6),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
                 ("TOPPADDING", (0, 0), (-1, -1), 6),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
             ]
