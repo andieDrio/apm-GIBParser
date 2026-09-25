@@ -229,9 +229,28 @@ Partial output must not be presented as a successful daily report.
 
 ## Current Phase
 
-**PHASE 1 — Focused Daily-Monitoring Architecture**
+**PHASE 3 — Daily Retrieval & Normalization**
+
+Completed gates:
+- Phase 1 — focused daily-monitoring architecture.
+- Phase 2 — Group-IB runtime authentication and response-schema verification.
+
+Verified runtime contract evidence:
+- Basic authentication with Group-IB web-interface email + Personal API token.
+- GET /api/v2/compromised/account_group/updated.
+- bounded limit parameter.
+- object response with integer count and seqUpdate, plus item records.
+- observed timeline, source, malware, service, client, event and attribution fields are normalized only when present.
+
+Phase 3 implementation now provides:
+- verified Group-IB HTTP client;
+- provider response validation before normalization;
+- canonical compromise records;
+- deterministic provider-record identity with a documented SHA-256 fallback;
+- observation fingerprints that exclude password/session-secret fields;
+- unit tests for contract parsing and normalization.
 
 Next:
-**PHASE 2 — Group-IB Runtime Contract**
+**PHASE 4 — Local History & NEW/OLD Classification**
 
-The existing bounded probe is the contract-validation mechanism before the production client is replaced or implemented.
+Pagination/incremental retrieval parameters remain intentionally unimplemented until their runtime parameter contract is independently verified.
