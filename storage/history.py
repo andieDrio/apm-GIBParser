@@ -46,6 +46,53 @@ class HistoryStore:
     def __exit__(self, *_: object) -> None:
         self.close()
 
+    @staticmethod
+    def _parse_timestamp(value: str | None) -> datetime | None:
+        if not value:
+            return None
+        normalized = value.strip()
+        if normalized.endswith("Z"):
+            normalized = normalized[:-1] + "+00:00"
+        try:
+            parsed = datetime.fromisoformat(normalized)
+        except ValueError:
+            return None
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
+
+    @classmethod
+    def _earliest_timestamp(
+        cls,
+        current: str | None,
+        candidate: str | None,
+    ) -> str | None:
+        if current is None:
+            return candidate
+        if candidate is None:
+            return current
+        current_dt = cls._parse_timestamp(current)
+        candidate_dt = cls._parse_timestamp(candidate)
+        if current_dt is None or candidate_dt is None:
+            return min(current, candidate)
+        return candidate if candidate_dt < current_dt else current
+
+    @classmethod
+    def _latest_timestamp(
+        cls,
+        current: str | None,
+        candidate: str | None,
+    ) -> str | None:
+        if current is None:
+            return candidate
+        if candidate is None:
+            return current
+        current_dt = cls._parse_timestamp(current)
+        candidate_dt = cls._parse_timestamp(candidate)
+        if current_dt is None or candidate_dt is None:
+            return max(current, candidate)
+        return candidate if candidate_dt > current_dt else current
+
     def _create_schema(self) -> None:
         self._connection.execute(
             """
@@ -104,12 +151,13 @@ class HistoryStore:
         else:
             first_local_seen = existing.first_local_seen
 
-        first_provider_seen = (
-            existing.first_provider_seen if existing else None
-        ) or record.date_first_seen
-
-        last_provider_seen = record.date_last_seen or (
-            existing.last_provider_seen if existing else None
+        first_provider_seen = self._earliest_timestamp(
+            existing.first_provider_seen if existing else None,
+            record.date_first_seen,
+        )
+        last_provider_seen = self._latest_timestamp(
+            existing.last_provider_seen if existing else None,
+            record.date_last_seen,
         )
 
         self._connection.execute(
