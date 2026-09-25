@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from typing import Any, Mapping
 
 import httpx
@@ -88,20 +87,20 @@ class GroupIBClient:
         *,
         limit: int = 100,
         sequence_date: str | None = None,
-        start_time: datetime | None = None,
-        end_time: datetime | None = None,
     ) -> GroupIBResponse:
-        """Retrieve updated account records for the requested rolling window."""
+        """Retrieve the latest account-update stream from a sequence cursor.
+
+        Provider-side df/dt filtering is intentionally not used here. Group-IB's
+        verified incremental retrieval contract is sequence_list -> seqUpdate ->
+        repeated updated requests. The application applies its exact monitoring
+        window locally after normalization.
+        """
         if not 1 <= limit <= 500:
             raise ValueError("Group-IB retrieval limit must be between 1 and 500.")
         if sequence_date is None:
             raise ValueError("sequence_date is required for latest-data retrieval.")
         if len(sequence_date) != 10:
             raise ValueError("sequence_date must use YYYY-MM-DD format.")
-        if (start_time is None) != (end_time is None):
-            raise ValueError("start_time and end_time must be provided together.")
-        if start_time is not None and end_time is not None and end_time <= start_time:
-            raise ValueError("end_time must be after start_time.")
 
         sequence_url = f"{self._base_url}{SEQUENCE_LIST_PATH}"
         try:
@@ -130,8 +129,6 @@ class GroupIBClient:
             page = self._get_updated_page(
                 limit=limit,
                 seq_update=last_sequence_update,
-                start_time=start_time,
-                end_time=end_time,
             )
             all_items.extend(page.items)
             if not page.items or page.count <= 0:
@@ -154,14 +151,9 @@ class GroupIBClient:
         *,
         limit: int,
         seq_update: int,
-        start_time: datetime | None,
-        end_time: datetime | None,
     ) -> GroupIBResponse:
         url = f"{self._base_url}{COMPROMISED_ACCOUNT_UPDATED_PATH}"
-        params: dict[str, object] = {"limit": limit, "seqUpdate": seq_update}
-        if start_time is not None and end_time is not None:
-            params["df"] = self._format_api_datetime(start_time)
-            params["dt"] = self._format_api_datetime(end_time)
+        params = {"limit": limit, "seqUpdate": seq_update}
 
         try:
             response = self._client.get(url, params=params)
@@ -176,16 +168,6 @@ class GroupIBClient:
         except ValueError as exc:
             raise GroupIBSchemaError("Group-IB returned invalid JSON.") from exc
         return self._parse_response(payload)
-
-    @staticmethod
-    def _format_api_datetime(value: datetime) -> str:
-        if value.tzinfo is None:
-            raise ValueError("Group-IB date bounds must be timezone-aware.")
-        return (
-            value.astimezone(timezone.utc)
-            .replace(microsecond=0)
-            .strftime("%Y-%m-%dT%H:%M:%SZ")
-        )
 
     @staticmethod
     def _raise_for_status(response: httpx.Response) -> None:
