@@ -312,13 +312,14 @@ def _accounts_table(
         "Victim's Login",
         "Password",
         "Victim IP",
-        "Source Type",
         "Source",
         "Malware",
         "Threat Actor",
     ]
     # Keep the full table inside the 15 mm A4-landscape frame (735 pt).
-    widths = [62, 60, 60, 72, 82, 72, 58, 68, 68, 65, 68]
+    # Source Type is intentionally omitted so the operational fields have
+    # enough room for a one-glance scan without clipping the page edge.
+    widths = [65, 65, 65, 80, 95, 80, 60, 80, 65, 80]
 
     rows: list[list[object]] = [[
         Paragraph(escape(header), header_style) for header in headers
@@ -326,7 +327,6 @@ def _accounts_table(
 
     for record in records:
         stealer = _join(record.stealer_families)
-        source_type = _join(record.source_types)
         source = _join(record.source_names)
         source_links = _join(record.source_links)
         if source_links and source_links != "—":
@@ -341,7 +341,6 @@ def _accounts_table(
                 value(_text(record.username or record.account)),
                 value(_text(record.password), password=True),
                 value(_join(record.victim_ips)),
-                value(source_type),
                 value(source),
                 value(stealer),
                 value(_join(record.threat_actors) if include_actor else "—"),
