@@ -20,6 +20,8 @@ def make_record(
     record_id: str = "record-001",
     first_seen: str | None = "2026-09-25T01:00:00Z",
     last_seen: str | None = "2026-09-25T01:30:00Z",
+    compromised: str | None = None,
+    detected: str | None = None,
     event_id: str = "event-001",
 ) -> object:
     return normalize_record(
@@ -28,6 +30,8 @@ def make_record(
             "login": "user@example.test",
             "dateFirstSeen": first_seen,
             "dateLastSeen": last_seen,
+            "dateFirstCompromised": compromised,
+            "dateDetected": detected,
             "events": [{"id": event_id}],
             "sourceType": ["example-source"],
         }
@@ -99,6 +103,21 @@ class HistoryClassificationTests(unittest.TestCase):
                     history.last_provider_seen,
                     "2026-09-26T02:00:00Z",
                 )
+
+    def test_recent_compromise_is_new_even_when_first_seen_is_older(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with HistoryStore(Path(directory) / "history.db") as store:
+                result = classify_record(
+                    store,
+                    make_record(
+                        first_seen="2026-09-10T01:00:00Z",
+                        compromised="2026-09-24T01:00:00Z",
+                    ),
+                    observed_at=OBSERVED_AT,
+                    newness_window_days=7,
+                )
+
+                self.assertEqual(result.classification, NEW)
 
     def test_old_provider_timeline_is_not_new(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
