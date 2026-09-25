@@ -32,6 +32,19 @@ class GroupIBClientTests(unittest.TestCase):
         )
         self.assertEqual(sequence, 123456789)
 
+    def test_parses_date_bounded_slice_response(self) -> None:
+        response = GroupIBClient._parse_slice_response(
+            {
+                "count": 1,
+                "resultId": "slice-001",
+                "items": [{"id": "record-001"}],
+            }
+        )
+
+        self.assertEqual(response.count, 1)
+        self.assertEqual(response.result_id, "slice-001")
+        self.assertEqual(response.items[0]["id"], "record-001")
+
     def test_rejects_invalid_top_level_contract(self) -> None:
         with self.assertRaises(GroupIBSchemaError):
             GroupIBClient._parse_response({"count": "1", "seqUpdate": 42, "items": []})
