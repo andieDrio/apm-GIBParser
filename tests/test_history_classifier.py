@@ -72,6 +72,34 @@ class HistoryClassificationTests(unittest.TestCase):
                 self.assertEqual(first.classification, NEW)
                 self.assertEqual(second.classification, RESEEN)
 
+    def test_history_preserves_provider_timeline_bounds(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with HistoryStore(Path(directory) / "history.db") as store:
+                record = make_record(
+                    first_seen="2026-09-25T01:00:00Z",
+                    last_seen="2026-09-25T02:00:00Z",
+                )
+                classify_record(store, record, observed_at=OBSERVED_AT)
+                classify_record(
+                    store,
+                    make_record(
+                        first_seen="2026-09-24T01:00:00Z",
+                        last_seen="2026-09-26T02:00:00Z",
+                    ),
+                    observed_at=OBSERVED_AT,
+                )
+
+                history = store.get("provider:record-001")
+                self.assertIsNotNone(history)
+                self.assertEqual(
+                    history.first_provider_seen,
+                    "2026-09-24T01:00:00Z",
+                )
+                self.assertEqual(
+                    history.last_provider_seen,
+                    "2026-09-26T02:00:00Z",
+                )
+
     def test_old_provider_timeline_is_not_new(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             with HistoryStore(Path(directory) / "history.db") as store:
