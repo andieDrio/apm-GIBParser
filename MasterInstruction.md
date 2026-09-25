@@ -127,7 +127,7 @@ Do not claim a provider field exists unless it is supported by verified document
 - Never print API tokens or authorization headers.
 - Never write tokens into reports.
 - Show account/email identifiers in full when required for operational report correlation.
-- Do not include plaintext passwords or session cookies in the daily PDF unless explicitly required by a future project-owner change.
+- Include the provider-supplied login/password fields in the operational PDF because the project owner explicitly requested credential visibility. Never include Group-IB API tokens or session cookies.
 - Do not fabricate unavailable source, actor, malware, or dark-web data.
 - Keep `.env` ignored by Git.
 
