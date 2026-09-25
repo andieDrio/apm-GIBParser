@@ -48,7 +48,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-The provider retrieval starts from a verified `/sequence_list` cursor with a safe date overlap, then paginates `compromised/account_group/updated` using the documented `df` / `dt` bounds and `seqUpdate` cursor. The application then applies an exact local timestamp filter using Group-IB `dateLastSeen` (falling back to `dateFirstSeen`) so the report window is not tied to calendar midnight.
+The provider retrieval starts from a verified `/sequence_list` cursor and paginates `compromised/account_group/updated` using `seqUpdate` only. The application then applies the exact rolling 24-hour timestamp filter locally using Group-IB `dateLastSeen` (falling back to `dateFirstSeen`). Provider-side `df` / `dt` are intentionally excluded from the latest-data acquisition path so the provider-current boundary is tested independently from the report window.
 
 ## What the Daily Report Shows
 
@@ -97,11 +97,21 @@ The repository contains:
 
 ```
 tools/groupib_contract_probe.py
+tools/groupib_latest_data_probe.py
 groupib/client.py
 groupib/normalizer.py
 tests/test_groupib_client.py
 tests/test_groupib_normalizer.py
+tests/test_daily_report.py
 ```
+
+Run the latest-data diagnostic directly with:
+
+```bash
+python tools/groupib_latest_data_probe.py
+```
+
+It reports provider record count, final sequence cursor, latest provider timestamp and the latest record metadata without printing account/password/cookie values.
 
 The probe reports field names/types without printing response values. The production client validates the provider envelope before normalization, and the canonical model excludes password/session-secret fields.
 
@@ -157,10 +167,8 @@ REPEAT
 
 ## Current Phase
 
-**PHASE 6 — One-Command PDF Reporting — IMPLEMENTED; PRESENTATION VALIDATION IN PROGRESS**
+**PHASE 6 — One-Command PDF Reporting — IMPLEMENTED; LATEST-PROVIDER RETRIEVAL GATE IN PROGRESS**
 
 Phases 1–5 are implemented and the daily runtime now generates the PDF. The current reporting gate is focused on professional boxed charts, full account correlation, and Philippines Time presentation for provider timestamps.
 
-After PDF presentation/runtime validation, the next gate is **PHASE 7 — End-to-End Validation**.
-
-Rolling-window latest-data retrieval is implemented using the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` flow with documented `df` / `dt` bounds and an exact local 24-hour timestamp filter.
+The PDF pipeline remains implemented, but the active gate is now provider-data validation. Latest-data retrieval uses the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` sequence flow without provider-side `df` / `dt`; the exact 24-hour PHT window is applied locally after normalization. Once the diagnostic proves current provider timestamps, the next gate is full end-to-end validation.
