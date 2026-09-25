@@ -184,7 +184,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-For the user's daily-report requirement, the primary retrieval path uses the documented Group-IB collection slice with exact `df` / `dt` UTC timestamps for the previous 24 hours through the current run. The slice is paginated with its `resultId`, then records are sorted newest-first by `dateLastSeen` with `dateFirstSeen` fallback. NEW records must visibly include First Seen and Last Seen in PHT. Sequence-based retrieval remains available as the verified incremental/provider-current mechanism and diagnostic path.
+For the user's daily-report requirement, the PDF reporting window remains the previous 24 hours through the current run, but provider acquisition uses a separate bounded latest-data lookback. The default is 30 days, retrieved with the documented Group-IB collection endpoint using `df` / `dt` and `resultId` pagination. Records are sorted newest-first by `dateLastSeen` with `dateFirstSeen` fallback. NEW records must visibly include First Seen and Last Seen in PHT. The 24-hour report window must not be used to discard current provider records solely because their First Seen/Last Seen timeline is older. Sequence-based retrieval remains available as the verified incremental/provider-current diagnostic mechanism.
 
 ## Reporting File Convention
 Reports should be generated automatically as:
@@ -231,7 +231,7 @@ Implement the verified Group-IB client and canonical daily record model.
 
 **Status: COMPLETE.** The verified client uses Basic authentication and the verified `compromised/account_group/updated` endpoint. Provider responses are validated before normalization. Canonical records use provider record identity when available and a deterministic SHA-256 fallback otherwise. Sensitive password/session fields are excluded from the canonical model.
 
-Sequence-based incremental retrieval is verified and implemented. The latest-data path intentionally retrieves by sequence cursor only. Returned records are not discarded using `dateLastSeen` / `dateFirstSeen`, because those fields describe the compromise timeline rather than provider update time. The rolling 24-hour PHT interval remains report run context until a verified provider-update timestamp is available.
+Sequence-based incremental retrieval is verified and implemented as a separate provider-update path. The daily report uses the bounded collection endpoint with a default 30-day lookback because the operational requirement is the current/latest account population, not merely accounts whose provider update sequence advanced during the last 24 hours. Returned records are not discarded using `dateLastSeen` / `dateFirstSeen` as an update-time filter.
 
 ### PHASE 4 — Local History & NEW/OLD Classification
 Implement deterministic identity, first/last local observation and repeat-safe classification.
@@ -249,7 +249,7 @@ Connect retrieval, classification, summary and professional ReportLab PDF genera
 ### PHASE 7 — End-to-End Validation
 Validate repeated runs, old-record handling, new-record detection, report generation, redaction, latest-provider-data acquisition, and failure behavior.
 
-**Current active gate:** prove the live provider latest-data boundary independently from the PDF/history pipeline using `tools/groupib_latest_data_probe.py`, then validate the full rolling-window report run.
+**Current active gate:** validate the live bounded latest-data account retrieval against the Group-IB dashboard population, then validate the full rolling-window report run.
 
 ## Completion Standard
 A phase is complete only when implementation and validation evidence exist. After each gate document:
