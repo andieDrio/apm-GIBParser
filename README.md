@@ -48,7 +48,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-The provider retrieval starts from a verified `/sequence_list` cursor and paginates `compromised/account_group/updated` using `seqUpdate` only. The application then applies the exact rolling 24-hour timestamp filter locally using Group-IB `dateLastSeen` (falling back to `dateFirstSeen`). Provider-side `df` / `dt` are intentionally excluded from the latest-data acquisition path so the provider-current boundary is tested independently from the report window.
+The provider retrieval starts from a verified `/sequence_list` cursor and paginates `compromised/account_group/updated` using `seqUpdate` only. Returned records are retained from the latest sequence stream rather than filtered by `dateLastSeen` / `dateFirstSeen`, because those fields describe the compromise timeline, not provider update time. The rolling 24-hour PHT interval is retained as report run context. Provider-side `df` / `dt` are intentionally excluded from latest-data acquisition.
 
 ## What the Daily Report Shows
 
@@ -172,4 +172,4 @@ REPEAT
 
 Phases 1–5 are implemented and the daily runtime now generates the PDF. The current reporting gate is focused on professional boxed charts, full account correlation, and Philippines Time presentation for provider timestamps.
 
-The PDF pipeline remains implemented, but the active gate is now provider-data validation. Latest-data retrieval uses the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` sequence flow without provider-side `df` / `dt`; the exact 24-hour PHT window is applied locally after normalization. Once the diagnostic proves current provider timestamps, the next gate is full end-to-end validation.
+The PDF pipeline remains implemented, but the active gate is now provider-data validation. Latest-data retrieval uses the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` sequence flow without provider-side `df` / `dt`. Records are retained according to the provider's latest sequence stream; `dateLastSeen` is not used as an update-time filter. Once the diagnostic proves current sequence data, the next gate is full end-to-end validation.
