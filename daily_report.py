@@ -134,22 +134,39 @@ def run() -> Path:
     output_stamp = window.end.strftime("%Y-%m-%d_%H%M")
     output_path = DEFAULT_REPORT_DIRECTORY / f"GIB_DailyReport_{output_stamp}.pdf"
 
+    provider_start_utc = window.start.astimezone(timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    provider_end_utc = window.end.astimezone(timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+
     with GroupIBClient(
         config.username,
         config.api_token,
         base_url=config.api_base_url,
         timeout_seconds=config.request_timeout_seconds,
     ) as client:
-        response = client.get_compromised_account_updates(
+        response = client.get_compromised_account_slice(
+            date_from=provider_start_utc,
+            date_to=provider_end_utc,
             limit=limit,
-            sequence_date=window.sequence_bootstrap_date,
         )
 
     provider_records = normalize_response(response.items)
-    # Do not filter latest sequence results by dateLastSeen/dateFirstSeen.
-    # Those fields describe the compromise timeline, not when the provider
-    # updated the record. seqUpdate is the verified latest-data ordering.
-    records = provider_records
+    records = tuple(
+        sorted(
+            provider_records,
+            key=lambda record: (
+                _record_window_timestamp(record) or datetime.min.replace(
+                    tzinfo=PHILIPPINES_TZ
+                ),
+                record.date_first_seen or "",
+                record.provider_record_id,
+            ),
+            reverse=True,
+        )
+    )
 
     with HistoryStore(DEFAULT_HISTORY_PATH) as history:
         classifications = classify_records(
