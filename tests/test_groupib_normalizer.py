@@ -14,6 +14,7 @@ class GroupIBNormalizerTests(unittest.TestCase):
             "login": "user@example.test",
             "dateFirstCompromised": None,
             "dateFirstSeen": "2026-09-25T08:00:00Z",
+            "dateDetected": "2026-09-25T08:01:00Z",
             "dateLastCompromised": None,
             "dateLastSeen": "2026-09-25T08:00:00Z",
             "eventCount": 1,
@@ -22,6 +23,7 @@ class GroupIBNormalizerTests(unittest.TestCase):
                     "id": "event-001",
                     "dateCompromised": "2026-09-24T23:00:00Z",
                     "dateDetected": "2026-09-25T08:01:00Z",
+                    "source": {"name": "Private channel", "type": "Telegram"},
                     "client": {
                         "ipv4": {
                             "ip": "192.0.2.10",
@@ -56,9 +58,8 @@ class GroupIBNormalizerTests(unittest.TestCase):
             "password": "must-never-enter-canonical-model",
             "source": [
                 {
-                    "id": "source-001",
+                    "id": "https://t.me/example/123",
                     "type": "Private channel",
-                    "url": "https://t.me/example/123",
                 }
             ],
             "threatActor": [],
@@ -78,6 +79,7 @@ class GroupIBNormalizerTests(unittest.TestCase):
         self.assertEqual(record.service_url, "https://portal.example.test/login")
         self.assertEqual(record.login_url, "https://portal.example.test/login")
         self.assertEqual(record.date_first_compromised, "2026-09-24T23:00:00Z")
+        self.assertEqual(record.date_detected, "2026-09-25T08:01:00Z")
         self.assertEqual(record.victim_ips, ("192.0.2.10",))
         self.assertEqual(record.victim_countries, ("Philippines",))
         self.assertEqual(record.victim_cities, ("Quezon City",))
