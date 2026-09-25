@@ -25,7 +25,7 @@ Compare Local History
    ↓
 NEW / OLD Classification
    ↓
-Quick View + Donut Charts
+Quick View + Professional Bar Charts
    ↓
 PDF
 ```
@@ -58,14 +58,12 @@ Where available from Group-IB:
 - First Compromised
 - Last Compromised
 
-### Donut Charts
-Charts are generated only from actual provider data, such as:
-- NEW vs OLD
-- infostealer families
-- source/collection
-- target domains
+### Professional Bar Charts
+The Quick View uses boxed, color-coded bar-chart panels generated only from actual provider data:
+- infostealer families and source/collection in one combined panel;
+- target domains in a separate panel.
 
-Unavailable fields are omitted rather than fabricated.
+The previous NEW-vs-OLD chart is intentionally omitted from the visual layout. Unavailable fields are omitted rather than fabricated.
 
 ## Data Handling
 
@@ -74,7 +72,7 @@ The project keeps a local history so an old compromise returned by Group-IB toda
 Sensitive data is minimized:
 - credentials stay in `.env`;
 - tokens are never printed;
-- account identifiers are masked in reports;
+- account identifiers are shown in full for operational report correlation;
 - plaintext passwords/session cookies are not included in the daily report by default.
 
 ## Current Provider Boundary
@@ -145,10 +143,10 @@ REPEAT
 
 ## Current Phase
 
-**PHASE 4 — Local History & NEW/OLD Classification — IMPLEMENTED; VALIDATION PENDING**
+**PHASE 6 — One-Command PDF Reporting — IMPLEMENTED; PRESENTATION VALIDATION IN PROGRESS**
 
-Phase 1 and Phase 2 are complete, and Phase 3 has passed its executable validation. Phase 4 now has SQLite durable history, deterministic NEW / OLD / RESEEN / REPEAT classification, local first/last observation tracking, provider timeline preservation, and repeat-safe upserts.
+Phases 1–5 are implemented and the daily runtime now generates the PDF. The current reporting gate is focused on professional boxed charts, full account correlation, and Philippines Time presentation for provider timestamps.
 
-After the Phase 4 test suite passes, the next gate is **PHASE 5 — Quick View & Donut Charts**.
+After PDF presentation/runtime validation, the next gate is **PHASE 7 — End-to-End Validation**.
 
 Pagination/incremental retrieval parameters remain intentionally deferred until independently verified.
