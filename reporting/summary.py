@@ -47,6 +47,7 @@ def build_quick_view(
     old_count = sum(item.classification == OLD for item in classifications)
     reseen_count = sum(item.classification == RESEEN for item in classifications)
     repeat_count = sum(item.classification == REPEAT for item in classifications)
+    historical_count = old_count + reseen_count + repeat_count
 
     stealer_families = [
         family for record in records for family in record.stealer_families
@@ -64,7 +65,7 @@ def build_quick_view(
         report_date=report_date,
         total_records=len(records),
         new_compromises=new_count,
-        old_historical=old_count,
+        old_historical=historical_count,
         reseen_recycled=reseen_count,
         repeat_records=repeat_count,
         infostealer_records=sum(bool(record.stealer_families) for record in records),
