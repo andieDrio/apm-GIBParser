@@ -79,10 +79,11 @@ A separate section for previously known or historically dated compromises.
 
 ### Timeline
 Where available from Group-IB:
+- Compromised Date
+- Date Detected
 - First Seen
 - Last Seen
-- First Compromised
-- Last Compromised
+- Source Link
 
 ### Professional Bar Charts
 The Quick View uses boxed, color-coded bar-chart panels generated only from actual provider data:
