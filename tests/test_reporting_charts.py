@@ -13,6 +13,14 @@ class ChartTests(unittest.TestCase):
         self.assertIsNotNone(chart)
         self.assertGreater(len(chart.contents), 0)
 
+    def test_distribution_height_is_bounded_for_many_categories(self) -> None:
+        chart = distribution(
+            "Sources",
+            tuple((f"source-{index}", index + 1) for index in range(30)),
+        )
+        self.assertIsNotNone(chart)
+        self.assertLessEqual(chart.height, 450)
+
     def test_empty_distribution_is_omitted(self) -> None:
         self.assertIsNone(distribution("No Data", ()))
         self.assertIsNone(new_vs_historical(new_count=0, historical_count=0))
