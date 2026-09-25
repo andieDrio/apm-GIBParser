@@ -75,10 +75,11 @@ def _bar_section(
     bar_x = label_x + 6
     value_font_name = "Helvetica-Bold"
     value_font_size = 6.8
+    value_gap = 8
     value_column = max(
         pdfmetrics.stringWidth(str(count), value_font_name, value_font_size)
         for _, count in data
-    ) + 12
+    ) + value_gap + 2
     available_bar_width = width - (label_x - x) - 6 - value_column
     bar_width = max(45, available_bar_width)
     chart_top = y + height - 40
@@ -115,8 +116,8 @@ def _bar_section(
             value_font_size,
         )
         value_x = min(
-            bar_x + width_value + 5,
-            x + width - value_column + (value_column - value_width) / 2,
+            bar_x + width_value + value_gap,
+            x + width - value_width - 2,
         )
         drawing.add(
             String(
