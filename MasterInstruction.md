@@ -64,7 +64,7 @@ No browser interaction should be required to generate the daily report.
 - Quick View summary.
 - Professional bar charts based only on actual provider data.
 - Deterministic evidence-based daily assessment with explicit activity level, confidence, facts, observations, assessment basis and analyst-attention items.
-- Philippines Time (Asia/Manila/PHT) display for provider timestamps.
+- Provider timestamp normalization for report presentation.
 - Server/local PDF generation.
 
 ### Explicitly out of scope
@@ -200,7 +200,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-For the user's daily-report requirement, the PDF reporting window remains the previous 24 hours through the current run, but provider acquisition uses a separate bounded latest-data lookback. The default is 30 days, retrieved with the documented Group-IB collection endpoint using `df` / `dt` and `resultId` pagination. Records are sorted newest-first by `dateLastSeen` with `dateFirstSeen` fallback. NEW records must visibly include First Seen and Last Seen in PHT. The 24-hour report window must not be used to discard current provider records solely because their First Seen/Last Seen timeline is older. Sequence-based retrieval remains available as the verified incremental/provider-current diagnostic mechanism.
+For the user's daily-report requirement, the PDF reporting window remains the previous 24 hours through the current run, but provider acquisition uses a separate bounded latest-data lookback. The default is 30 days, retrieved with the documented Group-IB collection endpoint using `df` / `dt` and `resultId` pagination. Records are sorted newest-first by `dateLastSeen` with `dateFirstSeen` fallback. NEW records must visibly include First Seen and Last Seen. The 24-hour report window must not be used to discard current provider records solely because their First Seen/Last Seen timeline is older. Sequence-based retrieval remains available as the verified incremental/provider-current diagnostic mechanism.
 
 ### Provider Lookback Boundary
 
