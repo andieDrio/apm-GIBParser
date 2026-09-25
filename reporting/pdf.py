@@ -25,6 +25,7 @@ from reportlab.platypus import (
 )
 
 from groupib.normalizer import CanonicalGroupIBRecord
+from reporting.assessment import AssessmentResult
 from reporting.charts import (
     distribution_panel,
     paired_distribution_panel,
@@ -471,6 +472,105 @@ def _summary_table(metrics: QuickViewMetrics) -> Table:
     return table
 
 
+def _assessment_panel(assessment: AssessmentResult) -> Table:
+    heading = ParagraphStyle(
+        "AssessmentHeading",
+        fontName="Helvetica-Bold",
+        fontSize=8,
+        leading=10,
+        textColor=colors.HexColor("#172554"),
+    )
+    label = ParagraphStyle(
+        "AssessmentLabel",
+        fontName="Helvetica-Bold",
+        fontSize=6.5,
+        leading=8,
+        textColor=colors.HexColor("#475569"),
+    )
+    body = ParagraphStyle(
+        "AssessmentBody",
+        fontName="Helvetica",
+        fontSize=6.5,
+        leading=8.5,
+        textColor=colors.HexColor("#0F172A"),
+    )
+    small = ParagraphStyle(
+        "AssessmentSmall",
+        fontName="Helvetica",
+        fontSize=6.2,
+        leading=8,
+        textColor=colors.HexColor("#475569"),
+    )
+    basis_rows = [
+        [Paragraph(escape(name), label), Paragraph(escape(value), body)]
+        for name, value in assessment.basis
+    ]
+    basis = Table(basis_rows, colWidths=[105, 90])
+    basis.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+                ("BOX", (0, 0), (-1, -1), 0.4, colors.HexColor("#CBD5E1")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ]
+        )
+    )
+
+    def bullets(items: Sequence[str]) -> Paragraph:
+        return Paragraph(
+            "<br/>".join(f"• {escape(item)}" for item in items),
+            body,
+        )
+
+    narrative = [
+        [Paragraph("ACTIVITY LEVEL", label), Paragraph(escape(assessment.activity_level), heading)],
+        [Paragraph("ASSESSMENT CONFIDENCE", label), Paragraph(escape(assessment.confidence), heading)],
+        [Paragraph("FACTS", label), bullets(assessment.facts)],
+        [Paragraph("KEY OBSERVATIONS", label), bullets(assessment.observations)],
+        [Paragraph("ASSESSMENT", label), Paragraph(escape(assessment.assessment), body)],
+        [Paragraph("RECOMMENDED ANALYST ATTENTION", label), bullets(assessment.analyst_attention)],
+    ]
+    narrative_table = Table(narrative, colWidths=[125, 610])
+    narrative_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+                ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#CBD5E1")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    table = Table(
+        [[narrative_table, basis]],
+        colWidths=[540, 195],
+        hAlign="LEFT",
+    )
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+                ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor("#93C5FD")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]
+        )
+    )
+    return table
+
+
 def _daily_delta_panel(metrics: QuickViewMetrics) -> Table:
     heading = ParagraphStyle(
         "DeltaHeading",
@@ -626,6 +726,7 @@ def generate_daily_report(
     window_start: datetime,
     window_end: datetime,
     metrics: QuickViewMetrics,
+    assessment: AssessmentResult,
     classifications: Sequence[ClassificationResult],
     records: Sequence[CanonicalGroupIBRecord],
     run_id: str,
@@ -696,6 +797,9 @@ def generate_daily_report(
         _summary_table(metrics),
         Spacer(1, 6),
         _daily_delta_panel(metrics),
+        Spacer(1, 8),
+        Paragraph("Daily Threat Assessment", section),
+        _assessment_panel(assessment),
         Spacer(1, 8),
         seven_day_trend_panel(
             "NEW COMPROMISED ACCOUNTS — LAST 7 DAYS",
