@@ -224,15 +224,15 @@ class _ReportDocument(BaseDocTemplate):
         canvas.saveState()
         canvas.setFont("Helvetica", 7)
         canvas.setFillColor(colors.HexColor("#64748B"))
-        canvas.drawCentredString(
-            landscape(A4)[0] / 2,
+        canvas.drawString(
+            15 * mm,
             9 * mm,
-            "Prepared by: APM",
+            f"Page {doc.page}",
         )
         canvas.drawRightString(
             landscape(A4)[0] - 15 * mm,
             9 * mm,
-            f"Page {doc.page}",
+            "Prepared by: APM",
         )
         canvas.restoreState()
 
@@ -787,8 +787,7 @@ def generate_daily_report(
         Spacer(1, 8),
         Paragraph(
             "Charts use only verified provider data. Account identifiers are shown in "
-            "full for operational correlation. First Seen and Last Seen are displayed "
-            "in Philippines Time (PHT, Asia/Manila).",
+            "full for operational correlation.",
             note,
         ),
         PageBreak(),
