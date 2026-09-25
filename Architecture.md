@@ -78,6 +78,25 @@ GROUP_IB_LATEST_LOOKBACK_DAYS=30
 
 The application bounds this value to 30 days. The broader provider window is required so current records such as a Group-IB account last seen several days/weeks ago can still be returned and classified as historical rather than disappearing from the report.
 
+### Daily Run History
+
+The local SQLite history now stores a compact `daily_runs` record only after PDF generation succeeds. This provides the previous successful run as the comparison baseline for:
+- NEW-compromise delta;
+- newly detected delta;
+- total-record delta;
+- newly affected target domains.
+
+The daily-run table stores aggregate metadata and domain names only; provider credentials and API tokens are never persisted.
+
+### Reporting Metrics
+
+The Quick View model now exposes:
+- seven-day NEW compromise total and daily average;
+- previous-run comparison deltas;
+- newly affected domain counts;
+- durable previous-run metadata.
+
+
 ## One-Command Entry Point
 
 ```bash
