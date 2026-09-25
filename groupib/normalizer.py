@@ -208,8 +208,10 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
             if value
         )
     )
-    source_names = tuple(
-        dict.fromkeys((*event_source_names, *top_level_source_names))
+    source_names = (
+        event_source_names
+        if event_source_names
+        else top_level_source_names
     )
 
     malware_objects = _objects(item.get("malware"))
