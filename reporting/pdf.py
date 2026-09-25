@@ -214,8 +214,9 @@ def generate_daily_report(
             charts.append(chart)
 
     if charts:
-        story.append(Table([charts[i:i + 2] for i in range(0, len(charts), 2)]))
-        story.append(Spacer(1, 6))
+        for chart in charts:
+            story.append(chart)
+            story.append(Spacer(1, 6))
 
     story.extend(
         [
