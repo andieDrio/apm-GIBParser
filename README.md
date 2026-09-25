@@ -1,116 +1,132 @@
-# Group-IB Threat Intelligence Web Application
+# Group-IB Daily Threat Intelligence Monitor
 
-Production-oriented web CTI investigation platform for Group-IB TI&A intelligence.
+A focused local utility for producing a **daily Group-IB threat intelligence quick view and PDF report**.
 
-## Purpose
+This project is intentionally small. It is not ThreatForge and is not a general-purpose CTI investigation platform.
 
-The platform ingests Group-IB threat intelligence and turns provider observations into a durable, searchable intelligence dataset.
+## Daily Workflow
 
-It is designed to distinguish:
+The target operator workflow is one command:
 
-- **NEW** findings
-- **OLD / HISTORICAL** compromises
-- **RESEEN / RECYCLED** compromises repeatedly observed by the provider
-- **REPEAT** observations already processed by the platform
+```bash
+python daily_report.py
+```
 
-It also preserves structured provenance for infostealers, attackers/attribution, leak sources, collections and dark-web references when those fields are explicitly supplied by Group-IB.
-
-## Target Stack
-
-- **Frontend:** Next.js / React / TypeScript / Tailwind CSS
-- **Backend:** FastAPI / Python
-- **Workers:** Redis-backed asynchronous ingestion
-- **Database:** PostgreSQL
-- **Evidence:** controlled raw JSON/evidence boundary
-- **Reporting:** server-side PDF generation
-- **Deployment:** Docker Compose locally, containerized production path
-
-## Security Model
-
-The browser never communicates directly with Group-IB.
-
-Group-IB credentials remain server-side and are protected by the backend secret boundary. Authentication, RBAC, validation, audit and redaction are enforced by the application.
-
-Sensitive intelligence such as plaintext passwords and session cookies is treated as restricted evidence.
-
-## Core Workflow
+The command will eventually perform:
 
 ```
 Group-IB
    ↓
-Provider Retrieval
+Daily Retrieval
    ↓
-Raw Evidence
+Normalize
    ↓
-Schema Validation
+Compare Local History
    ↓
-Canonical Normalization
+NEW / OLD Classification
    ↓
-Identity / Fingerprinting
+Quick View + Donut Charts
    ↓
-Transactional Persistence
-   ↓
-Lifecycle Classification
-   ├── NEW
-   ├── OLD / HISTORICAL
-   ├── RESEEN / RECYCLED
-   └── REPEAT
-   ↓
-FastAPI
-   ↓
-Next.js Investigation UI
-   ↓
-Reporting
+PDF
 ```
 
-## Investigation Areas
+Output:
 
-### Dashboard
-- total findings
-- new findings
-- historical findings
-- re-seen/recycled findings
-- infostealer infections
-- active session indicators
-- source/actor/stealer summaries
+```
+reports/GroupIB_Daily_Report_YYYY-MM-DD.pdf
+```
 
-### Findings
-Searchable and filterable compromised-account intelligence with timeline, exposure, provenance and lifecycle status.
+## What the Daily Report Shows
 
-### Infostealers
-Stealer family/build, HWID, victim IP, OS, target URL and related observations where supplied by the provider.
+### Quick View
+- report date
+- total processed records
+- NEW compromises
+- OLD / HISTORICAL records
+- verified infostealer counts
 
-### Attackers / Attribution
-Provider-supplied threat-actor and campaign information. The application does not fabricate attribution.
+### NEW Compromises
+A separate section for accounts that are newly observed according to the project's durable local-history rules.
 
-### Leak Sources
-Provider-supplied source, collection/dump and publication metadata.
+### OLD / HISTORICAL
+A separate section for previously known or historically dated compromises.
 
-### References
-Provider/source references, including dark-web/forum/marketplace/channel references when explicitly supplied.
+### Timeline
+Where available from Group-IB:
+- First Seen
+- Last Seen
+- First Compromised
+- Last Compromised
 
-### Evidence
-Controlled access to raw provider payloads and processing metadata.
+### Donut Charts
+Charts are generated only from actual provider data, such as:
+- NEW vs OLD
+- infostealer families
+- source/collection
+- target domains
 
-### Reports
-Executive and technical PDF reports generated from authorized normalized data.
+Unavailable fields are omitted rather than fabricated.
 
-## Repository Authority
+## Data Handling
 
-Development follows [MasterInstruction.md](MasterInstruction.md).
+The project keeps a local history so an old compromise returned by Group-IB today does not automatically become a new daily alert.
+
+Sensitive data is minimized:
+- credentials stay in `.env`;
+- tokens are never printed;
+- account identifiers are masked in reports;
+- plaintext passwords/session cookies are not included in the daily report by default.
+
+## Current Provider Boundary
+
+Group-IB API authentication and response structure must be verified before the production client is implemented.
+
+The repository contains:
+
+```
+tools/groupib_contract_probe.py
+```
+
+The probe performs a bounded request and reports field names/types without printing response values.
+
+## Repository Layout
+
+```
+apm-GIBParser/
+├── daily_report.py              # final one-command entry point
+├── groupib/
+│   ├── client.py                # verified provider client
+│   ├── normalizer.py            # canonical daily records
+│   └── classifier.py            # NEW / OLD logic
+├── storage/
+│   └── history.py               # durable local history
+├── reporting/
+│   ├── pdf.py                   # ReportLab PDF
+│   └── charts.py                # report chart generation
+├── reports/                     # generated PDFs, ignored by Git
+├── data/                        # local history, ignored by Git
+├── tools/
+│   └── groupib_contract_probe.py
+├── .env                         # local secrets, ignored by Git
+├── requirements.txt
+├── Architecture.md
+└── MasterInstruction.md
+```
+
+## Development Authority
+
+`MasterInstruction.md` is the governing development specification.
 
 GitHub `main` is the only source of truth.
 
-## Permanent Development Workflow
+Development follows the permanent loop:
 
 ```
 CURRENT main
   ↓
 DEEP INSPECT
   ↓
-PRIORITY ANALYSIS
-  ↓
-ROOT CAUSE
+PRIORITY
   ↓
 SURGICAL CHANGE
   ↓
@@ -118,61 +134,15 @@ VALIDATE
   ↓
 RE-INSPECT
   ↓
-COMMIT TO main
-  ↓
-RECORD PHASE / VALIDATION / NEXT GATE
+COMMIT main
   ↓
 REPEAT
 ```
 
-## Migration Status
+## Current Phase
 
-### Completed
-- Repository bootstrap
-- Permanent development instruction
-- Initial desktop prototype baseline
-- Local `.env` loading and secret exclusion
+**PHASE 1 — Focused Daily-Monitoring Architecture**
 
-### Current
-**Phase 1 — Web Architecture Baseline**
+The repository is being reduced from the earlier web-application concept to the clarified daily monitoring/reporting workflow.
 
-The target architecture has been migrated from a native PyQt6 desktop application to a web application. The existing PyQt6 implementation is historical migration context and is not the target architecture.
-
-### Next
-**Phase 2 — Group-IB API Contract Verification**
-
-Before implementing provider integration, verify:
-
-1. authentication mechanism
-2. compromised-account endpoint(s)
-3. infostealer endpoint(s)
-4. attacker/attribution fields
-5. leak/source/collection fields
-6. dark-web/reference fields
-7. timeline/event fields
-8. pagination/incremental retrieval
-9. status/error behavior
-10. actual response schemas
-
-No provider field or endpoint is considered authoritative until verified.
-
-## Development
-
-Target local stack:
-
-```bash
-docker compose up --build
-```
-
-Backend and frontend commands will be finalized with the Phase 1 implementation scaffold.
-
-## Security Rules
-
-- Never commit Group-IB credentials.
-- Never send Group-IB credentials to the browser.
-- Never log authorization headers or full secrets.
-- Use parameterized database operations.
-- Enforce RBAC.
-- Redact sensitive intelligence according to policy.
-- Preserve evidence provenance and auditability.
-- Do not infer or invent threat-actor, leak-source or dark-web attribution.
+Next gate: **PHASE 2 — Group-IB Runtime Contract**.

@@ -1,198 +1,228 @@
 # Master Instruction & Permanent Development Loop
 
 ## Project
-**Group-IB Threat Intelligence Web Application**
+**Group-IB Daily Threat Intelligence Monitor & PDF Reporter**
 
 ## Authority
 This document is the permanent governing specification for this repository unless explicitly changed by the project owner.
 
 ## Objective
-Build a production-grade web-based CTI investigation and reporting platform for Group-IB TI&A intelligence.
+Build a small, reliable daily Group-IB monitoring utility whose primary workflow is:
 
-The platform must securely ingest Group-IB intelligence, preserve raw evidence, normalize findings into a canonical model, maintain durable observation history, distinguish **NEW**, **OLD/HISTORICAL**, **RESEEN/RECYCLED**, and **REPEAT** findings, and expose investigation-ready views for compromised accounts, infostealers, attackers, leak provenance, dark-web references and related evidence.
+```
+Group-IB
+   ↓
+Daily Retrieval
+   ↓
+Normalization
+   ↓
+Local History
+   ↓
+NEW vs OLD/HISTORICAL Classification
+   ↓
+Quick View Metrics + Donut Charts
+   ↓
+Daily PDF Report
+```
 
-The application is a **web application**, not a native macOS desktop application.
+The project is **not** a general CTI investigation platform, not ThreatForge, and not a multi-user web application. The deliverable is a focused daily monitoring/reporting tool.
 
-## Target Architecture
-- Frontend: React / Next.js with TypeScript and Tailwind CSS.
-- Backend API: FastAPI with Python.
-- Background ingestion: asynchronous worker architecture using Redis as the queue/cache boundary.
-- Database: PostgreSQL as the system of record.
-- Raw evidence: controlled evidence storage; PostgreSQL JSONB may be used for bounded raw payloads, with an object-storage boundary available for larger evidence.
-- Reporting: server-side PDF generation.
-- Authentication/authorization: secure web authentication with RBAC.
-- Deployment: Docker Compose for local development and a production containerized deployment path.
+## Core User Workflow
+The normal operator workflow must eventually be one command:
 
-## Core Intelligence Capabilities
-1. Secure Group-IB API credential configuration on the server side.
-2. Group-IB API contract verification before production integration.
-3. Compromised account intelligence.
-4. Infostealer intelligence and stolen session/cookie indicators where licensed API responses expose them.
-5. Attacker/threat-actor attribution when explicitly provided by Group-IB.
-6. Leak provenance and source/collection metadata when explicitly provided.
-7. Dark-web/forum/marketplace/channel references when explicitly provided.
-8. Target URL/domain/service context.
-9. Timeline fields including first/last compromised and first/last observed where available.
-10. Event counts and observation history.
-11. Durable canonical normalization and deterministic identity.
-12. Newness/lifecycle classification:
-   - **NEW** — newly discovered by this platform according to the configured detection/observation policy.
-   - **OLD / HISTORICAL** — known compromise whose underlying compromise predates the configured newness window.
-   - **RESEEN / RECYCLED** — an existing compromise that is observed again or returned again by the provider without representing a new underlying compromise.
-   - **REPEAT** — the same provider observation/event has already been processed and should not create another logical finding.
-13. Search, filtering, sorting, investigation details and evidence drill-down.
-14. Executive and technical reporting.
+```bash
+python daily_report.py
+```
 
-## Canonical Intelligence Model
-Every normalized finding should support, where available:
+That command should:
+1. load Group-IB credentials from local environment configuration;
+2. retrieve the configured daily Group-IB intelligence;
+3. validate and normalize provider records;
+4. compare records against durable local history;
+5. classify records as **NEW** or **OLD / HISTORICAL** according to documented rules;
+6. calculate daily summary metrics;
+7. generate a small number of useful donut charts from actual returned data;
+8. generate the dated PDF report automatically under `reports/`;
+9. print a concise completion summary without printing secrets or unnecessary sensitive intelligence.
 
-### Identity
-- provider record ID
-- account/email
-- username
-- domain
-- canonical fingerprint
+No browser interaction should be required to generate the daily report.
 
-### Timeline
+## Scope
+
+### Primary
+- Group-IB compromised-account intelligence.
+- Daily new-compromise monitoring.
+- Separation of previously known/old accounts from daily new compromises.
+- First Seen and Last Seen visibility.
+- Infostealer fields when explicitly supplied by Group-IB.
+- Source/collection fields when explicitly supplied by Group-IB.
+- Threat-actor fields when explicitly supplied by Group-IB.
+- Target domain/service fields when explicitly supplied by Group-IB.
+- Quick View summary.
+- Donut charts based only on actual provider data.
+- Server/local PDF generation.
+
+### Explicitly out of scope
+- ThreatForge functionality.
+- General-purpose CTI case management.
+- Large React/Next.js dashboard.
+- FastAPI service.
+- Redis workers.
+- PostgreSQL as a mandatory dependency.
+- User authentication/RBAC for a single-operator local utility.
+- Browser-to-Group-IB integration.
+- Fabricated attribution, sources, or dark-web intelligence.
+- Complex investigation UI.
+
+The architecture may evolve if the project owner explicitly expands scope.
+
+## Classification Model
+
+### NEW
+A normalized compromise that has no matching underlying compromise identity in local history and is within the configured daily/newness policy.
+
+### OLD / HISTORICAL
+A compromise already known to local history, or a compromise whose provider timeline clearly predates the configured newness policy, and which does not represent a newly discovered underlying compromise.
+
+A record being returned by Group-IB today does **not** by itself make it NEW.
+
+### RESEEN / RECYCLED
+This is an internal processing concept when a known compromise is returned again. For the daily report, it should be grouped with the historical/known population unless the project owner explicitly requests a separate section.
+
+### REPEAT
+The same provider observation/event already processed during the current or a prior retrieval. It must not create duplicate local history.
+
+The classification decision must be deterministic and explainable from stored identity/timeline fields.
+
+## Timeline Requirements
+Where Group-IB provides them, preserve:
 - dateFirstCompromised
 - dateLastCompromised
 - dateFirstSeen
 - dateLastSeen
-- local first seen
-- local last seen
-- event count
 
-### Exposure
-- password availability/type
-- target URL/service
-- cookies/session indicators
-- other exposed artifacts
+Also maintain local:
+- first locally observed
+- last locally observed
 
-### Infostealer
-- stealer family
-- malware build/version
-- HWID
-- victim IP
-- operating system
-- infection/observation timestamps
+The report must clearly distinguish provider timeline fields from local observation timestamps.
 
-### Attribution
-- attacker/threat actor name or ID when explicitly supplied
-- campaign
-- infrastructure
-- attribution metadata/confidence when supplied
+## Data Integrity
+The local history store is the durable basis for daily NEW-vs-OLD classification.
 
-### Leak Provenance
-- source type
-- source name
-- collection/dump name
-- publication date
-- first observed date
-- source/reference identifiers
-- dark-web reference metadata when supplied
+Identity must not be based only on a timestamp. The implementation must define a deterministic normalized compromise identity using available provider/account/domain/event identifiers and document the fallback behavior when fields are absent.
 
-### Evidence
-- raw provider payload
-- endpoint used
-- request/query metadata excluding secrets
-- ingestion timestamp
-- schema/version metadata
-- processing/audit metadata
+Repeated provider records must update history rather than blindly create new logical compromises.
 
-**Do not infer attacker identity, dark-web source, breach origin or attribution from incomplete data. Null is preferable to fabricated intelligence.**
+## Provider Contract
+Group-IB authentication, endpoints, parameters, pagination/incremental retrieval and response fields must be verified before production client implementation.
 
-## Security Requirements
-1. Never expose or commit Group-IB API credentials.
-2. Group-IB credentials remain server-side and are never sent to the browser after configuration.
-3. Never log full API keys, authorization headers, passwords, session cookies or equivalent secrets.
-4. Encrypt sensitive secrets at rest where persistence is required.
-5. Enforce authentication and RBAC on all protected application/API routes.
-6. Validate and normalize all user-controlled filters and query parameters.
-7. Use parameterized SQL/ORM queries only.
-8. Apply output encoding and XSS protections.
-9. Protect against CSRF where applicable to the chosen authentication model.
-10. Apply secure CORS policy.
-11. Apply request size, pagination and rate limits.
-12. Separate tenant/user authorization from provider credentials if multi-user access is enabled.
-13. Minimize retention of plaintext credentials and session cookies.
-14. Redact sensitive values in UI, logs, reports and error messages unless explicitly authorized for investigation.
-15. Preserve evidence integrity with immutable/raw evidence boundaries and audit metadata.
-16. Do not claim API capabilities without verification against the actual Group-IB contract/runtime behavior.
+The existing `tools/groupib_contract_probe.py` is a bounded schema probe. It must not print or persist credentials or response values.
 
-## Data Integrity Requirements
-The database is the system of record for normalized intelligence and observation history.
+Do not claim a provider field exists unless it is supported by verified documentation or observed runtime schema.
 
-The identity model must distinguish:
-- provider identity,
-- underlying compromise identity,
-- provider observation/event identity,
-- local ingestion occurrence.
+## Security
+- Never commit Group-IB credentials.
+- Never print API tokens or authorization headers.
+- Never write tokens into reports.
+- Mask account/email identifiers in reports where practical.
+- Do not include plaintext passwords or session cookies in the daily PDF unless explicitly required by a future project-owner change.
+- Do not fabricate unavailable source, actor, malware, or dark-web data.
+- Keep `.env` ignored by Git.
 
-A provider record appearing again must not automatically become a new finding.
+## Reporting Requirements
+The daily PDF should be concise and operational.
 
-Canonical normalization and fingerprinting must be deterministic, versioned and documented before production persistence is considered complete.
+### Quick View
+- report date
+- total records processed
+- NEW compromises
+- OLD/HISTORICAL records
+- infostealer record count when available
+- other verified high-value daily metrics
+
+### Charts
+Use a restrained set of donut charts, for example:
+- NEW vs OLD/HISTORICAL
+- infostealer family distribution
+- source/collection distribution when the provider supplies it
+- target-domain distribution when useful
+
+Do not create charts for unavailable or fabricated fields.
+
+### NEW Compromises
+Include a table with useful fields such as:
+- masked account/email
+- domain
+- first seen
+- last seen
+- stealer
+- source
+- threat actor
+
+Only include fields actually available.
+
+### OLD / HISTORICAL
+Keep this separate from NEW and include:
+- masked account/email
+- domain
+- first seen
+- last seen
+- stealer
+- source
+
+## Reporting File Convention
+Reports should be generated automatically as:
+
+```
+reports/GroupIB_Daily_Report_YYYY-MM-DD.pdf
+```
 
 ## Permanent Development Loop
 Every cycle MUST follow:
-
 1. Fetch CURRENT latest `main`.
 2. Deep-inspect the actual repository.
 3. Identify the highest-priority unfinished work.
-4. Define the smallest production-grade change.
-5. Implement surgical changes.
+4. State internally what needs to change.
+5. Implement the smallest production-grade surgical change.
 6. Validate with executable checks.
-7. Re-inspect affected files and contracts.
+7. Re-inspect affected files/contracts.
 8. Commit validated work to `main`.
-9. Record changes, validation evidence, current phase and next gate.
+9. Record phase, validation, limitations and next gate.
 10. Repeat from the new current `main`.
 
 ### Non-negotiable rules
-- GitHub `main` is the only source of truth and authority.
-- Never rely on stale assumptions, old snapshots, previous diagnoses or screenshots when current code can be inspected.
+- GitHub `main` is the only source of truth.
+- Never rely on stale snapshots, old SHAs, screenshots or previous diagnoses when current code can be inspected.
 - Do not rewrite whole files unless genuinely necessary.
-- Preserve working behavior unless the architecture migration explicitly requires replacement.
-- No mock/fake telemetry presented as real capability.
-- No unrelated cleanup or dependencies.
+- No mock/fake intelligence presented as real.
+- No unrelated dependencies or cleanup.
 - Resolve root causes rather than symptoms.
-- Editing files is not completion; runtime validation is required where applicable.
-- API contracts must be verified before implementation claims are made.
+- Runtime validation is required where applicable.
+- Never request or expose the user's Group-IB secret.
 
-## Priority Order
-1. Backend/application architecture
-2. API connectivity and telemetry/data flow
-3. API/service/model contracts
-4. Authentication and authorization
-5. Data integrity, validation, persistence and error handling
-6. Performance, reliability and security
-7. Frontend/UI/UX
-8. Reporting
-9. Documentation and cleanup
+## Phase Gates
 
-## Migration Phase Gates
+### PHASE 1 — Focused Daily-Monitoring Architecture
+Define and validate the reduced scope, one-command workflow, local history model and PDF/report structure.
 
-### PHASE 1 — Web Architecture Baseline
-Complete when the web architecture, service boundaries, data model direction, security boundaries and development workflow are documented.
+### PHASE 2 — Group-IB Runtime Contract
+Complete authentication and response-schema verification using the bounded probe.
 
-### PHASE 2 — Backend/API Contract
-Verify Group-IB authentication, endpoints, parameters, pagination/incremental retrieval and response schemas before production integration.
+### PHASE 3 — Daily Retrieval & Normalization
+Implement the verified Group-IB client and canonical daily record model.
 
-### PHASE 3 — Canonical Intelligence Pipeline
-Implement raw evidence capture, schema validation, canonical normalization, deterministic identity and durable observation history.
+### PHASE 4 — Local History & NEW/OLD Classification
+Implement deterministic identity, first/last local observation and repeat-safe classification.
 
-### PHASE 4 — Lifecycle Classification
-Implement and validate NEW / OLD-HISTORICAL / RESEEN-RECYCLED / REPEAT classification against persisted observations.
+### PHASE 5 — Quick View & Donut Charts
+Build the report summary and data-driven charts.
 
-### PHASE 5 — Persistence Integrity
-Implement PostgreSQL repositories, constraints, transactions, idempotent ingestion and read-back verification.
+### PHASE 6 — One-Command PDF Reporting
+Connect retrieval, classification, summary and ReportLab generation behind `python daily_report.py`.
 
-### PHASE 6 — Web Application
-Implement authenticated React/Next.js investigation UI, dashboards, search, filters, detail views and evidence drill-down.
-
-### PHASE 7 — Reporting
-Implement executive and technical PDF reporting with secret/data redaction controls.
-
-### PHASE 8 — End-to-End Validation
-Validate provider retrieval → raw evidence → normalization → persistence → classification → API → UI → reporting.
+### PHASE 7 — End-to-End Validation
+Validate repeated runs, old-record handling, new-record detection, report generation, redaction and failure behavior.
 
 ## Completion Standard
 A phase is complete only when implementation and validation evidence exist. After each gate document:
@@ -201,6 +231,3 @@ A phase is complete only when implementation and validation evidence exist. Afte
 - current phase,
 - known limitations,
 - next highest-priority gate.
-
-## Change Control
-Any conflict between implementation convenience and this specification is resolved in favor of this Master Instruction unless the project owner explicitly changes it.
