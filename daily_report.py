@@ -12,6 +12,7 @@ import sys
 from config import AppConfig
 from groupib.client import GroupIBClient, GroupIBClientError
 from groupib.normalizer import CanonicalGroupIBRecord, normalize_response
+from reporting.assessment import build_assessment
 from reporting.pdf import generate_daily_report
 from reporting.summary import build_quick_view
 from storage.classifier import classify_records
@@ -193,12 +194,14 @@ def run() -> Path:
             report_end=window.end,
             previous_run=previous_run,
         )
+        assessment = build_assessment(metrics, records)
         generated = generate_daily_report(
             output_path,
             report_date=report_date,
             window_start=window.start,
             window_end=window.end,
             metrics=metrics,
+            assessment=assessment,
             classifications=classifications,
             records=records,
             run_id=output_stamp,
