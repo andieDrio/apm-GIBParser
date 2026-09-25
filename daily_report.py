@@ -19,6 +19,7 @@ from storage.history import HistoryStore
 
 DEFAULT_LIMIT = 500
 DEFAULT_NEWNESS_WINDOW_DAYS = 1
+DEFAULT_LATEST_LOOKBACK_DAYS = 30
 DEFAULT_REPORT_DIRECTORY = Path("reports")
 DEFAULT_HISTORY_PATH = Path("data/groupib_history.db")
 PHILIPPINES_TZ = ZoneInfo("Asia/Manila")
@@ -134,7 +135,16 @@ def run() -> Path:
     output_stamp = window.end.strftime("%Y-%m-%d_%H%M")
     output_path = DEFAULT_REPORT_DIRECTORY / f"GIB_DailyReport_{output_stamp}.pdf"
 
-    provider_start_utc = window.start.astimezone(timezone.utc).strftime(
+    latest_lookback_days = _positive_int(
+        os.getenv("GROUP_IB_LATEST_LOOKBACK_DAYS"),
+        default=DEFAULT_LATEST_LOOKBACK_DAYS,
+        name="GROUP_IB_LATEST_LOOKBACK_DAYS",
+    )
+    if latest_lookback_days > 30:
+        raise ValueError("GROUP_IB_LATEST_LOOKBACK_DAYS cannot exceed 30.")
+
+    provider_start = window.end - timedelta(days=latest_lookback_days)
+    provider_start_utc = provider_start.astimezone(timezone.utc).strftime(
         "%Y-%m-%dT%H:%M:%SZ"
     )
     provider_end_utc = window.end.astimezone(timezone.utc).strftime(
