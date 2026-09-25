@@ -239,7 +239,7 @@ Long tables should paginate cleanly.
 The daily report is not an evidence vault.
 
 Do not include by default:
-- plaintext passwords;
+- API tokens and session cookies;
 - session cookies;
 - API tokens;
 - authorization headers.
