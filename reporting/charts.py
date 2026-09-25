@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from math import tau
+from math import cos, radians, sin
 
 from reportlab.graphics.shapes import Circle, Drawing, String, Wedge
 
@@ -21,25 +21,17 @@ def _chart(title: str, values: Iterable[tuple[str, int]]) -> Drawing | None:
     inner_radius = 35
 
     start = 90.0
-    for index, (label, count) in enumerate(data):
+    for label, count in data:
         sweep = 360.0 * count / total
         end = start - sweep
-        wedge = Wedge(
-            center_x,
-            center_y,
-            outer_radius,
-            end,
-            start,
-        )
+        wedge = Wedge(center_x, center_y, outer_radius, end, start)
         wedge.strokeWidth = 0.5
         drawing.add(wedge)
 
-        # Keep the label outside the ring; avoid depending on ReportLab's
-        # optional doughnut chart implementation, which varies by version.
         mid_angle = (start + end) / 2.0
-        radians = mid_angle * tau / 360.0
-        label_x = center_x + 82 * __import__("math").cos(radians)
-        label_y = center_y + 82 * __import__("math").sin(radians)
+        angle = radians(mid_angle)
+        label_x = center_x + 82 * cos(angle)
+        label_y = center_y + 82 * sin(angle)
         drawing.add(
             String(
                 label_x,
