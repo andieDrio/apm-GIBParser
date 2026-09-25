@@ -1,83 +1,66 @@
-"""Small data-driven donut chart primitives for ReportLab reports."""
+"""Compact data-driven bar chart primitives for ReportLab reports."""
 
 from __future__ import annotations
 
 from collections.abc import Iterable
-from math import cos, radians, sin
 
-from reportlab.graphics.shapes import Circle, Drawing, String, Wedge
+from reportlab.graphics.shapes import Drawing, Rect, String
 
 
 def _chart(title: str, values: Iterable[tuple[str, int]]) -> Drawing | None:
-    data = tuple((label, count) for label, count in values if count > 0)
+    data = tuple((str(label), count) for label, count in values if count > 0)
     if not data:
         return None
 
-    total = sum(count for _, count in data)
-    drawing = Drawing(250, 170)
-    center_x = 70
-    center_y = 80
-    outer_radius = 48
-    inner_radius = 27
+    data = tuple(sorted(data, key=lambda item: (-item[1], item[0].casefold())))
+    drawing = Drawing(360, max(150, 42 + 22 * len(data)))
 
-    start = 90.0
-    for label, count in data:
-        sweep = 360.0 * count / total
-        end = start - sweep
-        wedge = Wedge(center_x, center_y, outer_radius, end, start)
-        wedge.strokeWidth = 0.5
-        drawing.add(wedge)
+    max_value = max(count for _, count in data)
+    chart_left = 145
+    chart_top = drawing.height - 28
+    bar_height = 12
+    row_height = 22
 
-        mid_angle = (start + end) / 2.0
-        angle = radians(mid_angle)
-        label_x = center_x + 64 * cos(angle)
-        label_y = center_y + 64 * sin(angle)
-        drawing.add(
-            String(
-                label_x,
-                label_y,
-                f"{label}: {count}",
-                textAnchor="middle",
-                fontName="Helvetica",
-                fontSize=7,
-            )
-        )
-        start = end
-
-    drawing.add(
-        Circle(
-            center_x,
-            center_y,
-            inner_radius,
-            fillColor=None,
-            strokeWidth=0,
-        )
-    )
     drawing.add(
         String(
-            center_x,
-            center_y - 3,
-            str(total),
-            textAnchor="middle",
-            fontName="Helvetica-Bold",
-            fontSize=11,
-        )
-    )
-    drawing.add(
-        String(
-            125,
-            153,
+            drawing.width / 2,
+            drawing.height - 12,
             title,
             textAnchor="middle",
             fontName="Helvetica-Bold",
             fontSize=9,
         )
     )
+
+    for index, (label, count) in enumerate(data):
+        y = chart_top - index * row_height - bar_height
+        width = 175 * count / max_value if max_value else 0
+        drawing.add(
+            String(
+                chart_left - 6,
+                y + 2,
+                label[:28],
+                textAnchor="end",
+                fontName="Helvetica",
+                fontSize=7,
+            )
+        )
+        drawing.add(Rect(chart_left, y, width, bar_height, strokeWidth=0))
+        drawing.add(
+            String(
+                chart_left + width + 5,
+                y + 2,
+                str(count),
+                fontName="Helvetica-Bold",
+                fontSize=7,
+            )
+        )
+
     return drawing
 
 
 def new_vs_historical(*, new_count: int, historical_count: int) -> Drawing | None:
-    """Return the NEW vs historical donut, or None when both are zero."""
+    """Return a NEW vs historical bar chart, or None when both are zero."""
     return _chart(
         "NEW vs OLD / HISTORICAL",
         (("NEW", new_count), ("OLD / HISTORICAL", historical_count)),
@@ -85,5 +68,5 @@ def new_vs_historical(*, new_count: int, historical_count: int) -> Drawing | Non
 
 
 def distribution(title: str, values: Iterable[tuple[str, int]]) -> Drawing | None:
-    """Return a donut for a verified categorical distribution."""
+    """Return a categorical bar chart for a verified distribution."""
     return _chart(title, values)
