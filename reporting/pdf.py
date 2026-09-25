@@ -287,7 +287,6 @@ def _accounts_table(
         textColor=colors.HexColor("#172554"),
     )
     summary_headers = [
-        "Account / Email",
         "Domain",
         "Infostealer",
         "Source / Collection",
@@ -296,7 +295,7 @@ def _accounts_table(
         "First Seen (PHT)",
         "Last Seen (PHT)",
     ]
-    summary_widths = [118, 72, 88, 92, 82, 72, 92, 92]
+    summary_widths = [95, 100, 105, 90, 90, 110, 110]
 
     for index, record in enumerate(records, start=1):
         account_label = _text(record.account)
@@ -328,7 +327,6 @@ def _accounts_table(
             [
                 summary_headers,
                 [
-                    _text(record.account),
                     _text(record.domain or record.service_domain),
                     _chip(stealer, index=_stable_chip_index(stealer)),
                     _chip(source, index=_stable_chip_index(source)),
@@ -346,9 +344,9 @@ def _accounts_table(
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E2E8F0")),
-                    ("BACKGROUND", (4, 0), (4, 0), colors.HexColor("#FEF3C7")),
-                    ("BACKGROUND", (6, 0), (6, 0), colors.HexColor("#DBEAFE")),
-                    ("BACKGROUND", (7, 0), (7, 0), colors.HexColor("#DCFCE7")),
+                    ("BACKGROUND", (3, 0), (3, 0), colors.HexColor("#FEF3C7")),
+                    ("BACKGROUND", (5, 0), (5, 0), colors.HexColor("#DBEAFE")),
+                    ("BACKGROUND", (6, 0), (6, 0), colors.HexColor("#DCFCE7")),
                     ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#172554")),
                     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                     ("FONTSIZE", (0, 0), (-1, -1), 6.6),
@@ -360,9 +358,9 @@ def _accounts_table(
                     ("TOPPADDING", (0, 0), (-1, -1), 3),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
                     ("BACKGROUND", (0, 1), (-1, 1), colors.white),
-                    ("BACKGROUND", (4, 1), (4, 1), colors.HexColor("#FFFBEB")),
-                    ("BACKGROUND", (6, 1), (6, 1), colors.HexColor("#F0F7FF")),
-                    ("BACKGROUND", (7, 1), (7, 1), colors.HexColor("#F0FDF4")),
+                    ("BACKGROUND", (3, 1), (3, 1), colors.HexColor("#FFFBEB")),
+                    ("BACKGROUND", (5, 1), (5, 1), colors.HexColor("#F0F7FF")),
+                    ("BACKGROUND", (6, 1), (6, 1), colors.HexColor("#F0FDF4")),
                 ]
             )
         )
@@ -524,8 +522,9 @@ def generate_daily_report(
             Paragraph(
                 "Classification is based on durable local history and the verified "
                 "Group-IB provider timeline. RESEEN/RECYCLED and REPEAT records are "
-                "included in the historical/known population. Sensitive provider "
-                "secrets, plaintext passwords and session cookies are excluded.",
+                "included in the historical/known population. Provider-supplied "
+                "login/password fields are included by explicit project-owner request; "
+                "API tokens and session cookies are excluded.",
                 note,
             ),
         ]
