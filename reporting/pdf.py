@@ -305,6 +305,7 @@ def _accounts_table(
         return Paragraph(escape(text), style)
 
     headers = [
+        "Compromised Date",
         "First Seen",
         "Last Seen",
         "Victim's Domain",
@@ -315,9 +316,8 @@ def _accounts_table(
         "Source",
         "Malware",
         "Threat Actor",
-        "Compromised",
     ]
-    widths = [63, 63, 78, 92, 78, 65, 72, 76, 72, 78, 76]
+    widths = [76, 63, 63, 78, 92, 78, 65, 72, 76, 72, 78]
 
     rows: list[list[object]] = [[
         Paragraph(escape(header), header_style) for header in headers
@@ -361,9 +361,9 @@ def _accounts_table(
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#F8FAFC")),
                 ("BACKGROUND", (0, 1), (-1, -1), colors.white),
                 ("BACKGROUND", (0, 1), (1, -1), colors.HexColor("#F8FAFC")),
-                ("BACKGROUND", (10, 1), (10, -1), colors.HexColor("#FFFBEB")),
-                ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#EFF6FF")),
-                ("BACKGROUND", (1, 1), (1, -1), colors.HexColor("#F0FDF4")),
+                ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#FFFBEB")),
+                ("BACKGROUND", (1, 1), (1, -1), colors.HexColor("#EFF6FF")),
+                ("BACKGROUND", (2, 1), (2, -1), colors.HexColor("#F0FDF4")),
                 ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#CBD5E1")),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 3),
