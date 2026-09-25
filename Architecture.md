@@ -220,17 +220,31 @@ Recommended structure:
 **Page 2+ — NEW Compromises**
 - full account/email identifier for operational correlation
 - domain
+- Compromised Date (PHT)
+- Date Detected (PHT)
 - First Seen (PHT)
 - Last Seen (PHT)
-- color-coded stealer/source fields
+- Victim's Login
+- Password
+- Victim IP
+- Source
+- Malware / stealer
 - threat actor where supplied
+- Source Link as the dedicated final column
 
 **Following section — OLD / HISTORICAL**
 - full account/email identifier
 - domain
+- Compromised Date (PHT)
+- Date Detected (PHT)
 - First Seen (PHT)
 - Last Seen (PHT)
-- color-coded stealer/source fields
+- Victim's Login
+- Password
+- Victim IP
+- Source
+- Malware / stealer
+- Source Link as the dedicated final column
 
 Long tables should paginate cleanly.
 
