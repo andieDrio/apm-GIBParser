@@ -313,7 +313,7 @@ def _accounts_table(
     for index, record in enumerate(records, start=1):
         rows.append([str(index), *_record_row(record, include_actor=include_actor)])
         detail_row_indices.append(len(rows))
-        rows.append([_record_details(record)])
+        rows.append([_record_details(record), "", "", "", "", "", "", "", ""])
     table = Table(
         [headers, *rows],
         repeatRows=1,
@@ -324,7 +324,6 @@ def _accounts_table(
     table.setStyle(
         TableStyle(
             [
-                ("SPAN", (0, 1), (-1, 1)),
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E2E8F0")),
                 ("BACKGROUND", (5, 0), (5, 0), colors.HexColor("#FEF3C7")),
                 ("BACKGROUND", (7, 0), (7, 0), colors.HexColor("#DBEAFE")),
@@ -346,7 +345,6 @@ def _accounts_table(
                 ("BACKGROUND", (5, 1), (5, -1), colors.HexColor("#FFFBEB")),
                 ("BACKGROUND", (7, 1), (7, -1), colors.HexColor("#F0F7FF")),
                 ("BACKGROUND", (8, 1), (8, -1), colors.HexColor("#F0FDF4")),
-                ("SPAN", (0, 2), (-1, 2)),
             ]
         )
     )
