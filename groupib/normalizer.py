@@ -49,7 +49,7 @@ class CanonicalGroupIBRecord:
     date_last_seen: str | None
     event_count: int
     stealer_families: tuple[str, ...]
-    stealer_builds: tuple[str, ...]
+    malware_ids: tuple[str, ...]
     victim_ips: tuple[str, ...]
     target_urls: tuple[str, ...]
     source_types: tuple[str, ...]
@@ -123,7 +123,7 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
             if value
         )
     )
-    stealer_builds = tuple(
+    malware_ids = tuple(
         dict.fromkeys(
             value
             for value in (
@@ -227,7 +227,7 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
         date_last_seen=last_seen,
         event_count=event_count,
         stealer_families=stealer_families,
-        stealer_builds=stealer_builds,
+        malware_ids=malware_ids,
         victim_ips=victim_ips,
         target_urls=target_urls,
         source_types=source_types,
