@@ -58,6 +58,13 @@ class CanonicalGroupIBRecord:
     service_domain: str | None
     service_host: str | None
     service_url: str | None
+    login_url: str | None
+    victim_countries: tuple[str, ...]
+    victim_cities: tuple[str, ...]
+    victim_providers: tuple[str, ...]
+    source_links: tuple[str, ...]
+    source_names: tuple[str, ...]
+    credential_present: bool
     event_ids: tuple[str, ...]
     observation_fingerprint: str
 
@@ -99,12 +106,45 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
     first_compromised = _text(item.get("dateFirstCompromised"))
     last_compromised = _text(item.get("dateLastCompromised"))
 
+    event_compromised_dates = tuple(
+        value
+        for value in (_text(event.get("dateCompromised")) for event in events)
+        if value
+    )
+    if first_compromised is None and event_compromised_dates:
+        first_compromised = min(event_compromised_dates)
+    if last_compromised is None and event_compromised_dates:
+        last_compromised = max(event_compromised_dates)
+
     source_types = _strings(item.get("sourceType"))
     source_objects = _objects(item.get("source"))
     source_ids = tuple(
         value
         for value in (_text(source.get("id")) for source in source_objects)
         if value
+    )
+    source_links = tuple(
+        dict.fromkeys(
+            value
+            for value in (
+                _text(source.get("url"))
+                or _text(source.get("link"))
+                or _text(source.get("href"))
+                for source in source_objects
+            )
+            if value
+        )
+    )
+    source_names = tuple(
+        dict.fromkeys(
+            value
+            for value in (
+                _text(source.get("name"))
+                or _text(source.get("type"))
+                for source in source_objects
+            )
+            if value
+        )
     )
 
     malware_objects = _objects(item.get("malware"))
@@ -134,13 +174,36 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
         )
     )
 
+    client_ipv4 = tuple(
+        _object(_object(event.get("client")).get("ipv4"))
+        for event in events
+        if _object(_object(event.get("client")).get("ipv4"))
+    )
     victim_ips = tuple(
         dict.fromkeys(
             value
-            for value in (
-                _text(_object(_object(event.get("client")).get("ipv4")).get("ip"))
-                for event in events
-            )
+            for value in (_text(client.get("ip")) for client in client_ipv4)
+            if value
+        )
+    )
+    victim_countries = tuple(
+        dict.fromkeys(
+            value
+            for value in (_text(client.get("countryName")) for client in client_ipv4)
+            if value
+        )
+    )
+    victim_cities = tuple(
+        dict.fromkeys(
+            value
+            for value in (_text(client.get("city")) for client in client_ipv4)
+            if value
+        )
+    )
+    victim_providers = tuple(
+        dict.fromkeys(
+            value
+            for value in (_text(client.get("provider")) for client in client_ipv4)
             if value
         )
     )
@@ -208,6 +271,14 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
         "service_domain": _text(service.get("domain")),
         "service_host": _text(service.get("host")),
         "service_url": _text(service.get("url")),
+        "login_url": _text(service.get("url")),
+        "victim_ips": victim_ips,
+        "victim_countries": victim_countries,
+        "victim_cities": victim_cities,
+        "victim_providers": victim_providers,
+        "source_links": source_links,
+        "source_names": source_names,
+        "credential_present": bool(_text(item.get("password"))),
     }
     encoded = json.dumps(
         observation_material,
@@ -236,6 +307,13 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
         service_domain=_text(service.get("domain")),
         service_host=_text(service.get("host")),
         service_url=_text(service.get("url")),
+        login_url=_text(service.get("url")),
+        victim_countries=victim_countries,
+        victim_cities=victim_cities,
+        victim_providers=victim_providers,
+        source_links=source_links,
+        source_names=source_names,
+        credential_present=bool(_text(item.get("password"))),
         event_ids=event_ids,
         observation_fingerprint="sha256:" + hashlib.sha256(encoded).hexdigest(),
     )
