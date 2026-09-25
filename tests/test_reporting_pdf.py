@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from groupib.normalizer import normalize_record
+from reporting.assessment import build_assessment
 from reporting.pdf import (
     format_ph_datetime,
     format_ph_time,
@@ -115,6 +116,7 @@ class PdfReportTests(unittest.TestCase):
                 records,
                 report_end=datetime(2026, 9, 25, 10, 0, tzinfo=timezone.utc),
             )
+            assessment = build_assessment(metrics, records)
             output = root / "reports" / "GIB_DailyReport_2026-09-25_1000.pdf"
             generated = generate_daily_report(
                 output,
@@ -122,6 +124,7 @@ class PdfReportTests(unittest.TestCase):
                 window_start=datetime(2026, 9, 24, 10, 0, tzinfo=timezone.utc),
                 window_end=datetime(2026, 9, 25, 10, 0, tzinfo=timezone.utc),
                 metrics=metrics,
+                assessment=assessment,
                 classifications=classifications,
                 records=records,
                 run_id="2026-09-25_1000",
