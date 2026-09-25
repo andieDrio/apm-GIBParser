@@ -258,6 +258,8 @@ def _accounts_table(
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
                 ("BACKGROUND", (0, 1), (-1, -1), colors.white),
                 ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
+                ("BACKGROUND", (6, 1), (6, -1), colors.HexColor("#F0F7FF")),
+                ("BACKGROUND", (7, 1), (7, -1), colors.HexColor("#F0FDF4")),
             ]
         )
     )
