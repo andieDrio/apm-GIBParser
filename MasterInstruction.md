@@ -20,7 +20,7 @@ Local History
    ↓
 NEW vs OLD/HISTORICAL Classification
    ↓
-Quick View Metrics + Donut Charts
+Quick View Metrics + Professional Bar Charts
    ↓
 Daily PDF Report
 ```
@@ -41,7 +41,7 @@ That command should:
 4. compare records against durable local history;
 5. classify records as **NEW** or **OLD / HISTORICAL** according to documented rules;
 6. calculate daily summary metrics;
-7. generate a small number of useful donut charts from actual returned data;
+7. generate professional boxed, color-coded bar charts from actual returned data;
 8. generate the dated PDF report automatically under `reports/`;
 9. print a concise completion summary without printing secrets or unnecessary sensitive intelligence.
 
@@ -59,7 +59,8 @@ No browser interaction should be required to generate the daily report.
 - Threat-actor fields when explicitly supplied by Group-IB.
 - Target domain/service fields when explicitly supplied by Group-IB.
 - Quick View summary.
-- Donut charts based only on actual provider data.
+- Professional bar charts based only on actual provider data.
+- Philippines Time (Asia/Manila/PHT) display for provider timestamps.
 - Server/local PDF generation.
 
 ### Explicitly out of scope
@@ -125,7 +126,7 @@ Do not claim a provider field exists unless it is supported by verified document
 - Never commit Group-IB credentials.
 - Never print API tokens or authorization headers.
 - Never write tokens into reports.
-- Mask account/email identifiers in reports where practical.
+- Show account/email identifiers in full when required for operational report correlation.
 - Do not include plaintext passwords or session cookies in the daily PDF unless explicitly required by a future project-owner change.
 - Do not fabricate unavailable source, actor, malware, or dark-web data.
 - Keep `.env` ignored by Git.
@@ -152,24 +153,24 @@ Do not create charts for unavailable or fabricated fields.
 
 ### NEW Compromises
 Include a table with useful fields such as:
-- masked account/email
+- full account/email identifier for operational correlation
 - domain
-- first seen
-- last seen
-- stealer
-- source
+- first seen (PHT)
+- last seen (PHT)
+- color-coded stealer
+- color-coded source
 - threat actor
 
 Only include fields actually available.
 
 ### OLD / HISTORICAL
 Keep this separate from NEW and include:
-- masked account/email
+- full account/email identifier
 - domain
-- first seen
-- last seen
-- stealer
-- source
+- first seen (PHT)
+- last seen (PHT)
+- color-coded stealer
+- color-coded source
 
 ## Reporting File Convention
 Reports should be generated automatically as:
@@ -223,13 +224,13 @@ Implement deterministic identity, first/last local observation and repeat-safe c
 
 **Implementation complete; local executable validation pending.** SQLite history and deterministic NEW / OLD/HISTORICAL / RESEEN/RECYCLED / REPEAT classification are implemented, including durable provider timeline bounds and repeat-safe upserts.
 
-After validation, the next gate is Phase 5 — Quick View & Donut Charts.
+After Phase 4 validation, the next gates are Phase 5 — Quick View & Professional Bar Charts, then Phase 6 — One-Command PDF Reporting & Presentation.
 
-### PHASE 5 — Quick View & Donut Charts
-Build the report summary and data-driven charts.
+### PHASE 5 — Quick View & Professional Bar Charts
+Build the report summary and data-driven color bar-chart panels.
 
-### PHASE 6 — One-Command PDF Reporting
-Connect retrieval, classification, summary and ReportLab generation behind `python daily_report.py`.
+### PHASE 6 — One-Command PDF Reporting & Presentation
+Connect retrieval, classification, summary and professional ReportLab PDF generation behind `python daily_report.py`, including boxed charts, full account correlation, and Asia/Manila timestamp presentation.
 
 ### PHASE 7 — End-to-End Validation
 Validate repeated runs, old-record handling, new-record detection, report generation, redaction and failure behavior.
