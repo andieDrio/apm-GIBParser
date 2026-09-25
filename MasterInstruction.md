@@ -248,6 +248,32 @@ Every cycle MUST follow:
 - Runtime validation is required where applicable.
 - Never request or expose the user's Group-IB secret.
 
+### Daily Operational Delta & Run Integrity
+
+The report should include, when a previous successful run exists:
+- NEW compromise delta versus the previous run;
+- newly detected seven-day delta;
+- total-record delta;
+- newly affected target domains.
+
+The first successful run establishes the comparison baseline. A failed PDF generation must not be persisted as a successful daily-run baseline.
+
+The report should also expose collection/data-quality metadata derived from the actual pipeline:
+- records retrieved;
+- records normalized;
+- records classified;
+- normalization error state;
+- report generation status;
+- run identifier;
+- timezone.
+
+These are operational metrics, not fabricated intelligence.
+
+### Automated Validation
+
+The repository should maintain an automated unit-test gate for pushes to `main` and pull requests. Provider integration remains a separate runtime validation step and must not require secrets in CI.
+
+
 ## Phase Gates
 
 ### PHASE 1 — Focused Daily-Monitoring Architecture
