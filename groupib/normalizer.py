@@ -326,7 +326,7 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
         victim_providers=victim_providers,
         source_links=source_links,
         source_names=source_names,
-        credential_present=bool(_text(item.get("password"))),
+        credential_present=password is not None,
         event_ids=event_ids,
         observation_fingerprint="sha256:" + hashlib.sha256(encoded).hexdigest(),
     )
