@@ -1,9 +1,4 @@
-"""Application configuration and secret handling.
-
-Secrets are never written to source-controlled files or emitted by this module.
-The current baseline keeps configuration in memory; persistent secure settings
-can be added behind this boundary without coupling the UI to storage.
-"""
+"""Application configuration and secret handling."""
 
 from __future__ import annotations
 
@@ -17,7 +12,8 @@ load_dotenv()
 
 @dataclass(frozen=True, slots=True)
 class AppConfig:
-    api_key: str = ""
+    username: str = ""
+    api_token: str = ""
     target_domain: str = ""
     api_base_url: str = "https://tap.group-ib.com/api/v2/"
     request_timeout_seconds: float = 30.0
@@ -25,17 +21,24 @@ class AppConfig:
     @classmethod
     def from_environment(cls) -> "AppConfig":
         return cls(
-            api_key=os.getenv("GROUP_IB_API_KEY", ""),
-            target_domain=os.getenv("GROUP_IB_TARGET_DOMAIN", ""),
+            username=os.getenv("GROUP_IB_USERNAME", "").strip(),
+            api_token=(
+                os.getenv("GROUP_IB_API_TOKEN", "").strip()
+                or os.getenv("GROUP_IB_API_KEY", "").strip()
+            ),
+            target_domain=os.getenv("GROUP_IB_TARGET_DOMAIN", "").strip(),
             api_base_url=os.getenv(
                 "GROUP_IB_API_BASE_URL",
                 "https://tap.group-ib.com/api/v2/",
-            ),
+            ).strip(),
         )
 
-    def masked_api_key(self) -> str:
-        if not self.api_key:
+    def has_credentials(self) -> bool:
+        return bool(self.username and self.api_token)
+
+    def masked_api_token(self) -> str:
+        if not self.api_token:
             return ""
-        if len(self.api_key) <= 8:
-            return "*" * len(self.api_key)
-        return f"{self.api_key[:4]}{'*' * (len(self.api_key) - 8)}{self.api_key[-4:]}"
+        if len(self.api_token) <= 8:
+            return "*" * len(self.api_token)
+        return f"{self.api_token[:4]}{'*' * (len(self.api_token) - 8)}{self.api_token[-4:]}"
