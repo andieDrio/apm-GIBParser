@@ -53,7 +53,7 @@ No browser interaction should be required to generate the daily report.
 - Group-IB compromised-account intelligence.
 - Daily new-compromise monitoring.
 - Separation of previously known/old accounts from daily new compromises.
-- First Seen and Last Seen visibility.
+- Compromised Date, First Seen and Last Seen visibility.
 - Infostealer fields when explicitly supplied by Group-IB.
 - Source/collection fields when explicitly supplied by Group-IB.
 - Threat-actor fields when explicitly supplied by Group-IB.
