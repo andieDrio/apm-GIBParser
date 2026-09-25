@@ -4,9 +4,11 @@ Implements only the runtime contract verified by the bounded probe:
 - Basic authentication with the TI web-interface email and Personal API token.
 - GET /compromised/account_group/updated
 - limit parameter
+- sequence cursor from /sequence_list
+- seqUpdate pagination on /compromised/account_group/updated
 - object response with count, seqUpdate and items.
 
-Pagination/incremental parameters are intentionally not guessed.
+The daily path starts from a verified sequence cursor and walks forward through the updated feed so the first 500 records returned by an un-cursored request cannot hide newer records.
 """
 
 from __future__ import annotations
@@ -18,6 +20,7 @@ import httpx
 
 DEFAULT_BASE_URL = "https://tap.group-ib.com/api/v2/"
 COMPROMISED_ACCOUNT_UPDATED_PATH = "compromised/account_group/updated"
+SEQUENCE_LIST_PATH = "sequence_list"
 
 
 class GroupIBClientError(Exception):
@@ -90,19 +93,82 @@ class GroupIBClient:
     def __exit__(self, *_: object) -> None:
         self.close()
 
-    def get_compromised_account_updates(self, *, limit: int = 100) -> GroupIBResponse:
-        """Retrieve a bounded batch from the verified updated-account feed."""
+    def get_compromised_account_updates(
+        self,
+        *,
+        limit: int = 100,
+        sequence_date: str | None = None,
+    ) -> GroupIBResponse:
+        """Retrieve the latest updated-account records from a sequence cursor."""
         if not 1 <= limit <= 500:
             raise ValueError("Group-IB retrieval limit must be between 1 and 500.")
+        if sequence_date is None:
+            raise ValueError("sequence_date is required for latest-data retrieval.")
+        if len(sequence_date) != 10:
+            raise ValueError("sequence_date must use YYYY-MM-DD format.")
 
+        sequence_url = f"{self._base_url}{SEQUENCE_LIST_PATH}"
+        try:
+            sequence_response = self._client.get(
+                sequence_url,
+                params={
+                    "date": sequence_date,
+                    "collection": "compromised/account_group",
+                },
+            )
+        except httpx.TimeoutException as exc:
+            raise GroupIBRequestError("Group-IB sequence request timed out.") from exc
+        except httpx.HTTPError as exc:
+            raise GroupIBRequestError("Group-IB sequence request failed.") from exc
+
+        self._raise_for_status(sequence_response)
+        try:
+            sequence_payload = sequence_response.json()
+        except ValueError as exc:
+            raise GroupIBSchemaError("Group-IB sequence response was invalid JSON.") from exc
+        sequence_update = self._parse_sequence_update(sequence_payload)
+
+        all_items: list[Mapping[str, Any]] = []
+        last_sequence_update = sequence_update
+        while True:
+            page = self._get_updated_page(
+                limit=limit,
+                seq_update=last_sequence_update,
+            )
+            all_items.extend(page.items)
+            if not page.items or page.count <= 0:
+                break
+            if page.seq_update <= last_sequence_update:
+                raise GroupIBSchemaError("Group-IB sequence cursor did not advance.")
+            last_sequence_update = page.seq_update
+
+        return GroupIBResponse(
+            count=len(all_items),
+            seq_update=last_sequence_update,
+            items=tuple(all_items),
+        )
+
+    def _get_updated_page(self, *, limit: int, seq_update: int) -> GroupIBResponse:
         url = f"{self._base_url}{COMPROMISED_ACCOUNT_UPDATED_PATH}"
         try:
-            response = self._client.get(url, params={"limit": limit})
+            response = self._client.get(
+                url,
+                params={"limit": limit, "seqUpdate": seq_update},
+            )
         except httpx.TimeoutException as exc:
             raise GroupIBRequestError("Group-IB request timed out.") from exc
         except httpx.HTTPError as exc:
             raise GroupIBRequestError("Group-IB request failed.") from exc
 
+        self._raise_for_status(response)
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise GroupIBSchemaError("Group-IB returned invalid JSON.") from exc
+        return self._parse_response(payload)
+
+    @staticmethod
+    def _raise_for_status(response: httpx.Response) -> None:
         if response.status_code in (401, 403):
             raise GroupIBAuthenticationError(
                 "Group-IB authentication or authorization was rejected."
@@ -114,12 +180,17 @@ class GroupIBClient:
                 f"Group-IB API returned HTTP {response.status_code}."
             )
 
-        try:
-            payload = response.json()
-        except ValueError as exc:
-            raise GroupIBSchemaError("Group-IB returned invalid JSON.") from exc
-
-        return self._parse_response(payload)
+    @staticmethod
+    def _parse_sequence_update(payload: Any) -> int:
+        if isinstance(payload, dict):
+            value = payload.get("seqUpdate")
+            if isinstance(value, int) and not isinstance(value, bool):
+                return value
+        if isinstance(payload, list) and payload:
+            value = payload[0].get("seqUpdate") if isinstance(payload[0], dict) else None
+            if isinstance(value, int) and not isinstance(value, bool):
+                return value
+        raise GroupIBSchemaError("Group-IB sequence response has no valid seqUpdate.")
 
     @staticmethod
     def _parse_response(payload: Any) -> GroupIBResponse:
