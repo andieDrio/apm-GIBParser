@@ -43,7 +43,7 @@ def classify_record(
     record: CanonicalGroupIBRecord,
     *,
     observed_at: datetime | None = None,
-    newness_window_days: int = 1,
+    newness_window_days: int = 7,
 ) -> ClassificationResult:
     """Classify one record before atomically updating local history.
 
