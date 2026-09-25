@@ -115,18 +115,37 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
 
     first_seen = _text(item.get("dateFirstSeen"))
     last_seen = _text(item.get("dateLastSeen"))
+
+    # Group-IB's current account_group contract exposes dateFirstCompromised /
+    # dateLastCompromised at item level. Some provider records/legacy shapes can
+    # instead expose dateCompromised (or compromisedAt) at the item/event level.
+    # Normalize all verified compromise-date variants before rendering so the
+    # PDF never loses an available Compromised Date merely because its location
+    # differs in the returned record shape.
     first_compromised = _text(item.get("dateFirstCompromised"))
     last_compromised = _text(item.get("dateLastCompromised"))
+    item_compromised = _text(item.get("dateCompromised")) or _text(item.get("compromisedAt"))
+    if first_compromised is None and item_compromised:
+        first_compromised = item_compromised
+    if last_compromised is None and item_compromised:
+        last_compromised = item_compromised
 
     event_compromised_dates = tuple(
         value
-        for value in (_text(event.get("dateCompromised")) for event in events)
+        for value in (
+            _text(event.get("dateCompromised"))
+            or _text(event.get("compromisedAt"))
+            or _text(event.get("dateFirstCompromised"))
+            or _text(event.get("dateLastCompromised"))
+            for event in events
+        )
         if value
     )
-    if first_compromised is None and event_compromised_dates:
-        first_compromised = min(event_compromised_dates)
-    if last_compromised is None and event_compromised_dates:
-        last_compromised = max(event_compromised_dates)
+    if event_compromised_dates:
+        if first_compromised is None:
+            first_compromised = min(event_compromised_dates)
+        if last_compromised is None:
+            last_compromised = max(event_compromised_dates)
 
     source_types = _strings(item.get("sourceType"))
     source_objects = _objects(item.get("source"))
