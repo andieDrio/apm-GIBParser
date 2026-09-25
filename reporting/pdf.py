@@ -505,7 +505,7 @@ def _assessment_panel(assessment: AssessmentResult) -> Table:
         [Paragraph(escape(name), label), Paragraph(escape(value), body)]
         for name, value in assessment.basis
     ]
-    basis = Table(basis_rows, colWidths=[104, 86], hAlign="LEFT")
+    basis = Table(basis_rows, colWidths=[98, 80], hAlign="LEFT")
     basis.setStyle(
         TableStyle(
             [
@@ -535,7 +535,7 @@ def _assessment_panel(assessment: AssessmentResult) -> Table:
         [Paragraph("ASSESSMENT", label), Paragraph(escape(assessment.assessment), body)],
         [Paragraph("RECOMMENDED ANALYST ATTENTION", label), bullets(assessment.analyst_attention)],
     ]
-    narrative_table = Table(narrative, colWidths=[112, 388], hAlign="LEFT")
+    narrative_table = Table(narrative, colWidths=[105, 340], hAlign="LEFT")
     narrative_table.setStyle(
         TableStyle(
             [
@@ -552,7 +552,7 @@ def _assessment_panel(assessment: AssessmentResult) -> Table:
     )
     table = Table(
         [[narrative_table, basis]],
-        colWidths=[505, 195],
+        colWidths=[455, 185],
         hAlign="CENTER",
     )
     table.setStyle(
