@@ -10,7 +10,7 @@ from pathlib import Path
 from groupib.normalizer import normalize_record
 from reporting.summary import build_quick_view
 from storage.classifier import classify_record
-from storage.history import HistoryStore
+from storage.history import DailyRunSummary, HistoryStore
 
 
 OBSERVED_AT = datetime(2026, 9, 25, 2, 0, tzinfo=timezone.utc)
@@ -123,7 +123,7 @@ class QuickViewTests(unittest.TestCase):
                 domain="new.example.test",
             ),
         )
-        previous = __import__("storage.history", fromlist=["DailyRunSummary"]).DailyRunSummary(
+        previous = DailyRunSummary(
             run_id="2026-09-24_1000",
             report_start="2026-09-23T10:00:00+00:00",
             report_end="2026-09-24T10:00:00+00:00",
