@@ -163,12 +163,14 @@ class GroupIBClient:
         date_to: str,
         limit: int = 500,
     ) -> GroupIBSliceResponse:
-        """Retrieve the exact latest time slice from the collection endpoint.
+        """Retrieve a bounded current account population from the collection endpoint.
 
-        Group-IB documents the non-updated collection endpoint with df/dt for
-        a data slice. This is used for the daily report because the report's
-        primary requirement is the provider data whose observation window is
-        the previous 24 hours through the current run time.
+        The collection endpoint accepts provider-side df/dt boundaries and
+        resultId pagination. The daily report uses a broader bounded lookback
+        here to acquire the current/latest account population, then applies
+        durable local history and provider First Seen/Last Seen semantics for
+        NEW versus historical classification. The PDF execution window remains
+        a separate rolling 24-hour reporting context.
         """
         if not date_from or not date_to:
             raise ValueError("Group-IB slice requires both date_from and date_to.")
