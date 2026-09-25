@@ -48,7 +48,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-The daily report now retrieves an exact rolling 24-hour provider slice using `GET /compromised/account_group?df=<UTC-start>&dt=<UTC-end>&limit=500`, then paginates the returned `resultId` slice. This makes the provider data window itself match the report window. The records are sorted newest-first using `dateLastSeen` with `dateFirstSeen` fallback. The report exposes NEW records with First Seen and Last Seen in PHT.
+The daily report keeps a rolling 24-hour **reporting window**, but provider acquisition uses a separate bounded latest-data lookback. By default, the client retrieves the most recent 30 days from `GET /compromised/account?df=<UTC-start>&dt=<UTC-end>&limit=500` and follows `resultId` pagination. This is intentionally broader than the report window so current Group-IB account records whose First Seen/Last Seen dates are older than 24 hours are not incorrectly discarded. Records are sorted newest-first using `dateLastSeen` with `dateFirstSeen` fallback. NEW classification still uses durable local history and the configured newness policy, while First Seen and Last Seen are displayed in PHT.
 
 ## What the Daily Report Shows
 
@@ -172,4 +172,4 @@ REPEAT
 
 Phases 1–5 are implemented and the daily runtime now generates the PDF. The current reporting gate is focused on professional boxed charts, full account correlation, and Philippines Time presentation for provider timestamps.
 
-The PDF pipeline remains implemented, but the active gate is now provider-data validation. Latest-data retrieval uses the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` sequence flow without provider-side `df` / `dt`. Records are retained according to the provider's latest sequence stream; `dateLastSeen` is not used as an update-time filter. Once the diagnostic proves current sequence data, the next gate is full end-to-end validation.
+The PDF pipeline remains implemented, but the active gate is now provider-data validation. Daily report acquisition uses a bounded current-data lookback through `/compromised/account_group` with `df` / `dt` and `resultId` pagination. The default lookback is 30 days, while the PDF header remains the exact rolling 24-hour execution window. Sequence-based `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` retrieval remains implemented as the verified incremental/latest-update diagnostic path.
