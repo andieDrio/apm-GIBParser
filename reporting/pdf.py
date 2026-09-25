@@ -317,7 +317,8 @@ def _accounts_table(
         "Malware",
         "Threat Actor",
     ]
-    widths = [76, 63, 63, 78, 92, 78, 65, 72, 76, 72, 78]
+    # Keep the full table inside the 15 mm A4-landscape frame (735 pt).
+    widths = [62, 60, 60, 72, 82, 72, 58, 68, 68, 65, 68]
 
     rows: list[list[object]] = [[
         Paragraph(escape(header), header_style) for header in headers
@@ -333,6 +334,7 @@ def _accounts_table(
 
         rows.append(
             [
+                value(format_ph_time(record.date_first_compromised)),
                 value(format_ph_time(record.date_first_seen)),
                 value(format_ph_time(record.date_last_seen)),
                 value(_text(record.domain or record.service_domain)),
@@ -343,7 +345,6 @@ def _accounts_table(
                 value(source),
                 value(stealer),
                 value(_join(record.threat_actors) if include_actor else "—"),
-                value(format_ph_time(record.date_first_compromised)),
             ]
         )
 
