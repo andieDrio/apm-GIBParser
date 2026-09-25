@@ -145,8 +145,6 @@ def run() -> Path:
         response = client.get_compromised_account_updates(
             limit=limit,
             sequence_date=window.sequence_bootstrap_date,
-            start_time=window.start,
-            end_time=window.end,
         )
 
     provider_records = normalize_response(response.items)
