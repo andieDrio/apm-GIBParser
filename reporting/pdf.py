@@ -125,11 +125,87 @@ def _record_row(
         _text(record.domain or record.service_domain),
         _chip(stealer, index=_stable_chip_index(stealer)),
         _chip(source, index=_stable_chip_index(source)),
+        format_ph_time(record.date_first_compromised),
         _text(_join(record.threat_actors)) if include_actor else "—",
         format_ph_time(record.date_first_seen),
         format_ph_time(record.date_last_seen),
     ]
     return row
+
+
+def _record_details(record: CanonicalGroupIBRecord) -> Table:
+    """Render operational account details without exposing plaintext credentials."""
+    label_style = ParagraphStyle(
+        "DetailLabel",
+        fontName="Helvetica-Bold",
+        fontSize=6.2,
+        leading=8,
+        textColor=colors.HexColor("#475569"),
+    )
+    value_style = ParagraphStyle(
+        "DetailValue",
+        fontName="Helvetica",
+        fontSize=6.2,
+        leading=8,
+        textColor=colors.HexColor("#0F172A"),
+    )
+
+    def cell(label: str, value: str) -> list[object]:
+        return [
+            Paragraph(escape(label), label_style),
+            Paragraph(escape(value), value_style),
+        ]
+
+    login = _text(record.username or record.account)
+    password = "[REDACTED — credential present]" if record.credential_present else "—"
+    login_url = _text(record.login_url)
+    victim_ip = _text(_join(record.victim_ips))
+    compromised = format_ph_time(record.date_first_compromised)
+    provider = _text(_join(record.victim_providers))
+    country = _text(_join(record.victim_countries))
+    city = _text(_join(record.victim_cities))
+    source_link = _text(_join(record.source_links))
+    source_type = _text(_join(record.source_types))
+    source_name = _text(_join(record.source_names))
+
+    rows = [
+        cell("Login", login) + cell("Password", password),
+        cell("Login URL", login_url) + cell("Victim's IP", victim_ip),
+        cell("Compromised", compromised) + cell("Provider", provider),
+        cell("Country", country) + cell("City", city),
+        cell("Source link", source_link) + cell("Source type", source_type),
+        cell("Source", source_name),
+    ]
+    table = Table(rows, colWidths=[58, 300, 58, 300], hAlign="LEFT")
+    for row_index in detail_row_indices:
+        table.setStyle(
+            TableStyle(
+                [
+                    ("SPAN", (0, row_index), (-1, row_index)),
+                    ("BACKGROUND", (0, row_index), (-1, row_index), colors.HexColor("#F8FAFC")),
+                    ("LEFTPADDING", (0, row_index), (-1, row_index), 3),
+                    ("RIGHTPADDING", (0, row_index), (-1, row_index), 3),
+                    ("TOPPADDING", (0, row_index), (-1, row_index), 3),
+                    ("BOTTOMPADDING", (0, row_index), (-1, row_index), 4),
+                ]
+            )
+        )
+
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+                ("BOX", (0, 0), (-1, -1), 0.35, colors.HexColor("#CBD5E1")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    return table
 
 
 def _classified_rows(
@@ -227,30 +303,32 @@ def _accounts_table(
         "Domain",
         "Infostealer Family",
         "Source / Collection",
+        "Compromised (PHT)",
         "Threat Actor",
         "First Seen (PHT)",
         "Last Seen (PHT)",
     ]
-    rows = [
-        [
-            str(index),
-            *_record_row(record, include_actor=include_actor),
-        ]
-        for index, record in enumerate(records, start=1)
-    ]
+    rows: list[list[object]] = []
+    detail_row_indices: list[int] = []
+    for index, record in enumerate(records, start=1):
+        rows.append([str(index), *_record_row(record, include_actor=include_actor)])
+        detail_row_indices.append(len(rows))
+        rows.append([_record_details(record)])
     table = Table(
         [headers, *rows],
         repeatRows=1,
         splitByRow=1,
-        colWidths=[22, 135, 88, 108, 112, 78, 100, 100],
+        colWidths=[20, 118, 72, 88, 92, 82, 72, 92, 92],
         hAlign="LEFT",
     )
     table.setStyle(
         TableStyle(
             [
+                ("SPAN", (0, 1), (-1, 1)),
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E2E8F0")),
-                ("BACKGROUND", (6, 0), (6, 0), colors.HexColor("#DBEAFE")),
-                ("BACKGROUND", (7, 0), (7, 0), colors.HexColor("#DCFCE7")),
+                ("BACKGROUND", (5, 0), (5, 0), colors.HexColor("#FEF3C7")),
+                ("BACKGROUND", (7, 0), (7, 0), colors.HexColor("#DBEAFE")),
+                ("BACKGROUND", (8, 0), (8, 0), colors.HexColor("#DCFCE7")),
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#172554")),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                 ("FONTNAME", (0, 1), (1, -1), "Helvetica"),
@@ -265,8 +343,10 @@ def _accounts_table(
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
                 ("BACKGROUND", (0, 1), (-1, -1), colors.white),
                 ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
-                ("BACKGROUND", (6, 1), (6, -1), colors.HexColor("#F0F7FF")),
-                ("BACKGROUND", (7, 1), (7, -1), colors.HexColor("#F0FDF4")),
+                ("BACKGROUND", (5, 1), (5, -1), colors.HexColor("#FFFBEB")),
+                ("BACKGROUND", (7, 1), (7, -1), colors.HexColor("#F0F7FF")),
+                ("BACKGROUND", (8, 1), (8, -1), colors.HexColor("#F0FDF4")),
+                ("SPAN", (0, 2), (-1, 2)),
             ]
         )
     )
