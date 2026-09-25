@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from math import tau
 
-from reportlab.graphics.charts.doughnut import DoughnutChart
-from reportlab.graphics.shapes import Drawing, String
+from reportlab.graphics.shapes import Circle, Drawing, String, Wedge
 
 
 def _chart(title: str, values: Iterable[tuple[str, int]]) -> Drawing | None:
@@ -13,23 +13,68 @@ def _chart(title: str, values: Iterable[tuple[str, int]]) -> Drawing | None:
     if not data:
         return None
 
-    drawing = Drawing(260, 190)
-    chart = DoughnutChart()
-    chart.x = 55
-    chart.y = 25
-    chart.width = 150
-    chart.height = 150
-    chart.data = [[count for _, count in data]]
-    chart.labels = [label for label, _ in data]
-    chart.slices.strokeWidth = 0.5
-    chart.slices.fontName = "Helvetica"
-    chart.slices.fontSize = 8
+    total = sum(count for _, count in data)
+    drawing = Drawing(320, 210)
+    center_x = 92
+    center_y = 100
+    outer_radius = 62
+    inner_radius = 35
 
-    drawing.add(chart)
+    start = 90.0
+    for index, (label, count) in enumerate(data):
+        sweep = 360.0 * count / total
+        end = start - sweep
+        wedge = Wedge(
+            center_x,
+            center_y,
+            outer_radius,
+            end,
+            start,
+        )
+        wedge.strokeWidth = 0.5
+        drawing.add(wedge)
+
+        # Keep the label outside the ring; avoid depending on ReportLab's
+        # optional doughnut chart implementation, which varies by version.
+        mid_angle = (start + end) / 2.0
+        radians = mid_angle * tau / 360.0
+        label_x = center_x + 82 * __import__("math").cos(radians)
+        label_y = center_y + 82 * __import__("math").sin(radians)
+        drawing.add(
+            String(
+                label_x,
+                label_y,
+                f"{label}: {count}",
+                textAnchor="middle",
+                fontName="Helvetica",
+                fontSize=8,
+            )
+        )
+        start = end
+
+    drawing.add(
+        Circle(
+            center_x,
+            center_y,
+            inner_radius,
+            fillColor=None,
+            strokeWidth=0,
+        )
+    )
     drawing.add(
         String(
-            130,
-            175,
+            center_x,
+            center_y - 3,
+            str(total),
+            textAnchor="middle",
+            fontName="Helvetica-Bold",
+            fontSize=12,
+        )
+    )
+    drawing.add(
+        String(
+            160,
+            190,
             title,
             textAnchor="middle",
             fontName="Helvetica-Bold",
