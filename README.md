@@ -77,6 +77,20 @@ A first run establishes the baseline; delta and newly-affected-domain comparison
 
 Unit tests are executed automatically by GitHub Actions on pushes to `main` and pull requests.
 
+### Automated Daily Threat Assessment
+
+Every generated PDF now includes a deterministic, ready-made assessment derived only from the current normalized Group-IB data and the previous successful daily baseline when available.
+
+The assessment contains:
+- **Activity Level** — `NO NEW ACTIVITY`, `OBSERVED ACTIVITY`, or `ELEVATED ACTIVITY` under documented local rules;
+- **Assessment Confidence** — `LIMITED`, `MODERATE`, or `HIGH`, based on baseline availability and source-link evidence coverage;
+- **Facts** and **Key Observations** tied to report metrics;
+- **Assessment** bounded to observed Group-IB intelligence;
+- **Recommended Analyst Attention** based on actual findings;
+- **Assessment Basis** showing the underlying counts.
+
+The assessment is deterministic and local; it does not use an LLM and does not claim that absence of NEW records means an environment is safe.
+
 
 ## What the Daily Report Shows
 
@@ -162,7 +176,9 @@ apm-GIBParser/
 ├── storage/
 │   └── history.py               # durable local history
 ├── reporting/
+│   ├── assessment.py            # deterministic daily assessment
 │   ├── pdf.py                   # ReportLab PDF
+│   ├── summary.py               # Quick View metrics
 │   └── charts.py                # report chart generation
 ├── reports/                     # generated PDFs, ignored by Git
 ├── data/                        # local history, ignored by Git
@@ -203,8 +219,8 @@ REPEAT
 
 ## Current Phase
 
-**PHASE 6 — One-Command PDF Reporting — IMPLEMENTED; LATEST-PROVIDER RETRIEVAL GATE IN PROGRESS**
+**PHASE 7 — End-to-End Validation & Evidence-Based Assessment — ACTIVE**
 
 Phases 1–5 are implemented and the daily runtime now generates the PDF. The current reporting gate is focused on professional boxed charts, full account correlation, and Philippines Time presentation for provider timestamps.
 
-The PDF pipeline remains implemented, but the active gate is now provider-data validation. Daily report acquisition uses a bounded current-data lookback through `/compromised/account_group` with `df` / `dt` and `resultId` pagination. The default lookback is 30 days, while the PDF header remains the exact rolling 24-hour execution window. Sequence-based `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` retrieval remains implemented as the verified incremental/latest-update diagnostic path.
+The PDF pipeline remains implemented, including the deterministic daily assessment. The active gate is now end-to-end validation of assessment output, baseline-aware confidence, Daily Delta behavior and real Group-IB runtime data. Daily report acquisition uses a bounded current-data lookback through `/compromised/account_group` with `df` / `dt` and `resultId` pagination. The default lookback is 30 days, while the PDF header remains the exact rolling 24-hour execution window. Sequence-based `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` retrieval remains implemented as the verified incremental/latest-update diagnostic path.
