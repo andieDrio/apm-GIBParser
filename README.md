@@ -62,6 +62,22 @@ Window end:    Sep 25, 2026 11:13 AM PHT
 
 The daily report keeps a rolling 24-hour **reporting window**, but provider acquisition uses a separate bounded latest-data lookback. By default, the client retrieves the most recent 30 days from `GET /compromised/account?df=<UTC-start>&dt=<UTC-end>&limit=500` and follows `resultId` pagination. This is intentionally broader than the report window so current Group-IB account records whose First Seen/Last Seen dates are older than 24 hours are not incorrectly discarded. Records are sorted newest-first using `dateLastSeen` with `dateFirstSeen` fallback. NEW classification still uses durable local history and the configured newness policy, while Compromised Date, First Seen and Last Seen are displayed in PHT.
 
+### Daily Operational Summary
+
+The report now includes:
+- Executive Summary with total records, NEW compromises, seven-day detected count, affected-domain count, seven-day total and daily average.
+- Daily Delta against the most recent successfully generated report.
+- Newly Affected Domains, based on domains not present in the previous successful run.
+- Collection/data-quality and run metadata.
+- Durable daily-run summaries stored in the local SQLite history database.
+
+A first run establishes the baseline; delta and newly-affected-domain comparisons become available on the next successful run.
+
+### Validation
+
+Unit tests are executed automatically by GitHub Actions on pushes to `main` and pull requests.
+
+
 ## What the Daily Report Shows
 
 ### Quick View
