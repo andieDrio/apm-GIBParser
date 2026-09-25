@@ -184,7 +184,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-The verified Group-IB TI&A documentation supports `df` / `dt` parameters, but the latest-data path intentionally does **not** send them. It uses only `sequence_list` → `seqUpdate` → repeated `updated` requests, matching the verified incremental retrieval procedure. The report uses the rolling 24-hour PHT interval as run context, while the returned records are retained according to the provider's sequence-update stream. `dateLastSeen` / `dateFirstSeen` are compromise timeline fields and must not be treated as provider-update timestamps. This prevents current sequence updates from being discarded merely because the underlying compromise was first/last seen in an older year.
+For the user's daily-report requirement, the primary retrieval path uses the documented Group-IB collection slice with exact `df` / `dt` UTC timestamps for the previous 24 hours through the current run. The slice is paginated with its `resultId`, then records are sorted newest-first by `dateLastSeen` with `dateFirstSeen` fallback. NEW records must visibly include First Seen and Last Seen in PHT. Sequence-based retrieval remains available as the verified incremental/provider-current mechanism and diagnostic path.
 
 ## Reporting File Convention
 Reports should be generated automatically as:
