@@ -177,20 +177,6 @@ def _record_details(record: CanonicalGroupIBRecord) -> Table:
         cell("Source", source_name),
     ]
     table = Table(rows, colWidths=[58, 300, 58, 300], hAlign="LEFT")
-    for row_index in detail_row_indices:
-        table.setStyle(
-            TableStyle(
-                [
-                    ("SPAN", (0, row_index), (-1, row_index)),
-                    ("BACKGROUND", (0, row_index), (-1, row_index), colors.HexColor("#F8FAFC")),
-                    ("LEFTPADDING", (0, row_index), (-1, row_index), 3),
-                    ("RIGHTPADDING", (0, row_index), (-1, row_index), 3),
-                    ("TOPPADDING", (0, row_index), (-1, row_index), 3),
-                    ("BOTTOMPADDING", (0, row_index), (-1, row_index), 4),
-                ]
-            )
-        )
-
     table.setStyle(
         TableStyle(
             [
@@ -348,6 +334,19 @@ def _accounts_table(
             ]
         )
     )
+    for row_index in detail_row_indices:
+        table.setStyle(
+            TableStyle(
+                [
+                    ("SPAN", (0, row_index), (-1, row_index)),
+                    ("BACKGROUND", (0, row_index), (-1, row_index), colors.HexColor("#F8FAFC")),
+                    ("LEFTPADDING", (0, row_index), (-1, row_index), 3),
+                    ("RIGHTPADDING", (0, row_index), (-1, row_index), 3),
+                    ("TOPPADDING", (0, row_index), (-1, row_index), 3),
+                    ("BOTTOMPADDING", (0, row_index), (-1, row_index), 4),
+                ]
+            )
+        )
     return table
 
 
