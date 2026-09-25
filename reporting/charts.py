@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from reportlab.graphics.shapes import Drawing, Line, RoundRect, String
+from reportlab.graphics.shapes import Drawing, Line, Rect, String
 from reportlab.lib import colors
 
 
@@ -91,12 +91,11 @@ def _bar_section(
         )
         width_value = bar_width * count / max_value if max_value else 0
         drawing.add(
-            RoundRect(
+            Rect(
                 bar_x,
                 row_y,
                 width_value,
                 bar_height,
-                radius=2,
                 fillColor=color,
                 strokeWidth=0,
             )
@@ -122,12 +121,11 @@ def paired_distribution_panel(
     """Return one boxed panel containing two compact categorical bar charts."""
     drawing = Drawing(370, PANEL_HEIGHT)
     drawing.add(
-        RoundRect(
+        Rect(
             2,
             2,
             366,
             PANEL_HEIGHT - 4,
-            radius=8,
             fillColor=colors.white,
             strokeColor=colors.HexColor("#93C5FD"),
             strokeWidth=0.8,
@@ -171,12 +169,11 @@ def distribution_panel(
     """Return one boxed categorical bar-chart panel."""
     drawing = Drawing(370, PANEL_HEIGHT)
     drawing.add(
-        RoundRect(
+        Rect(
             2,
             2,
             366,
             PANEL_HEIGHT - 4,
-            radius=8,
             fillColor=colors.white,
             strokeColor=colors.HexColor("#86EFAC"),
             strokeWidth=0.8,
@@ -201,12 +198,11 @@ def new_vs_historical(*, new_count: int, historical_count: int) -> Drawing | Non
         return None
     drawing = Drawing(360, 150)
     drawing.add(
-        RoundRect(
+        Rect(
             2,
             2,
             356,
             146,
-            radius=8,
             fillColor=colors.white,
             strokeColor=colors.HexColor("#CBD5E1"),
             strokeWidth=0.8,
