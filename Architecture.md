@@ -59,7 +59,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-The primary daily retrieval boundary is now the documented Group-IB collection slice: `GET /compromised/account_group?df=<UTC-start>&dt=<UTC-end>&limit=500`, followed by `resultId` pagination. This directly selects the previous 24 hours through the current run time. Returned records are normalized, sorted newest-first by `dateLastSeen` (fallback `dateFirstSeen`), classified against durable history, and rendered with First Seen / Last Seen in PHT.
+The PDF execution window is a rolling 24-hour operational context, but it is not used as the sole provider acquisition filter. The primary daily retrieval boundary is a bounded current-data collection slice: `GET /compromised/account_group?df=<UTC-lookback-start>&dt=<UTC-now>&limit=500`, followed by `resultId` pagination. The default provider lookback is 30 days. Returned records are normalized, sorted newest-first by `dateLastSeen` (fallback `dateFirstSeen`), classified against durable history, and rendered with First Seen / Last Seen in PHT. This separation prevents a current Group-IB account from disappearing merely because its provider timeline is older than the 24-hour report window.
 
 ## One-Command Entry Point
 
@@ -75,8 +75,9 @@ The entry point owns orchestration only. It should not contain HTTP parsing, cla
 Responsibilities:
 - load server/local credentials;
 - authenticate using the verified Group-IB contract;
-- retrieve the latest verified sequence stream;
-- retain records according to provider sequence updates rather than filtering on compromise timeline dates;
+- retrieve a bounded current account population through the collection endpoint with `df` / `dt` and `resultId` pagination;
+- retain provider records for classification instead of filtering them by the 24-hour report window;
+- keep the verified sequence-update path available for provider-current diagnostics and incremental ingestion;
 - handle timeout, HTTP errors and rate limits;
 - return provider payloads without leaking secrets.
 
@@ -277,4 +278,4 @@ Phase 4 implementation provides:
 Next after validation:
 **PHASE 7 — End-to-End Validation**
 
-Latest-data retrieval is implemented using the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` sequence contract. Provider-side `df` / `dt` and compromise timeline fields are not used to discard current sequence updates. `tools/groupib_latest_data_probe.py` provides an independent provider-current diagnostic before the final Phase 7 end-to-end gate.
+The daily report uses the bounded collection endpoint with a default 30-day provider lookback and `resultId` pagination so the current account population is not restricted to the 24-hour report window. The verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` path remains implemented and is used by `tools/groupib_latest_data_probe.py` as an independent latest-update diagnostic before the final Phase 7 end-to-end gate.
