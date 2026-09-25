@@ -59,7 +59,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-The provider retrieval starts from a safe `/sequence_list` calendar-date cursor, then walks `compromised/account_group/updated?seqUpdate=...` using the sequence cursor only. The application performs the exact rolling-window timestamp filter locally using `dateLastSeen` (falling back to `dateFirstSeen`). This deliberately separates provider-current retrieval from report-window selection.
+The provider retrieval starts from the report-window start calendar date via `/sequence_list`, then walks `compromised/account_group/updated?seqUpdate=...` using the sequence cursor only. Returned records are retained from that latest sequence stream. `dateLastSeen` and `dateFirstSeen` are compromise timeline fields, not provider-update timestamps, so they are not used to discard current sequence updates. The rolling 24-hour PHT interval remains report run context until a verified provider-update timestamp is available.
 
 ## One-Command Entry Point
 
@@ -76,7 +76,7 @@ Responsibilities:
 - load server/local credentials;
 - authenticate using the verified Group-IB contract;
 - retrieve the latest verified sequence stream;
-- apply the rolling 24-hour report window after normalization rather than constraining provider-current acquisition;
+- retain records according to provider sequence updates rather than filtering on compromise timeline dates;
 - handle timeout, HTTP errors and rate limits;
 - return provider payloads without leaking secrets.
 
@@ -277,4 +277,4 @@ Phase 4 implementation provides:
 Next after validation:
 **PHASE 7 — End-to-End Validation**
 
-Rolling-window latest-data retrieval is implemented using the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` sequence contract with exact local timestamp filtering. Provider-side `df` / `dt` are intentionally not used in the latest-data path. `tools/groupib_latest_data_probe.py` provides an independent provider-current diagnostic before the final Phase 7 end-to-end gate.
+Latest-data retrieval is implemented using the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` sequence contract. Provider-side `df` / `dt` and compromise timeline fields are not used to discard current sequence updates. `tools/groupib_latest_data_probe.py` provides an independent provider-current diagnostic before the final Phase 7 end-to-end gate.
