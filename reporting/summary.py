@@ -145,10 +145,14 @@ def build_quick_view(
     ]
     target_domain_counts = _sorted_counts(target_domains)
     previous_domains = set(previous_run.target_domains) if previous_run else set()
-    newly_affected_domain_counts = tuple(
-        (domain, count)
-        for domain, count in target_domain_counts
-        if domain not in previous_domains
+    newly_affected_domain_counts = (
+        tuple(
+            (domain, count)
+            for domain, count in target_domain_counts
+            if domain not in previous_domains
+        )
+        if previous_run is not None
+        else ()
     )
 
     return QuickViewMetrics(
