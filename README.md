@@ -99,7 +99,7 @@ Sensitive data is minimized:
 - credentials stay in `.env`;
 - tokens are never printed;
 - account identifiers are shown in full for operational report correlation;
-- plaintext passwords/session cookies are not included in the daily report by default.
+- provider-supplied login/password fields are included in the daily operational report by explicit project-owner request; API tokens and session cookies are never included.
 
 ## Current Provider Boundary
 
@@ -125,7 +125,7 @@ python tools/groupib_latest_data_probe.py
 
 It reports provider record count, final sequence cursor, latest provider timestamp and the latest record metadata without printing account/password/cookie values.
 
-The probe reports field names/types without printing response values. The production client validates the provider envelope before normalization, and the canonical model excludes password/session-secret fields.
+The probe reports field names/types without printing response values. The production client validates the provider envelope before normalization, and the canonical model includes the provider password only for the explicitly requested operational report; API tokens/session cookies remain excluded.
 
 ## Repository Layout
 
