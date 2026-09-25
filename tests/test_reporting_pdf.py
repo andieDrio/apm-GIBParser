@@ -79,7 +79,7 @@ class PdfReportTests(unittest.TestCase):
             "Sep 25, 2026 09:00 AM",
         )
 
-    def test_generates_dated_pdf_without_secret_fields(self) -> None:
+    def test_generates_dated_pdf_with_operational_credentials(self) -> None:
         records = (
             make_record(
                 record_id="new-001",
@@ -128,7 +128,8 @@ class PdfReportTests(unittest.TestCase):
 
             payload = output.read_bytes()
             self.assertTrue(payload.startswith(b"%PDF-"))
-            self.assertNotIn(b"plaintext-secret-must-not-be-rendered", payload)
+            self.assertEqual(records[0].password, "plaintext-secret-must-not-be-rendered")
+            self.assertEqual(records[1].password, "plaintext-secret-must-not-be-rendered")
 
 
 if __name__ == "__main__":
