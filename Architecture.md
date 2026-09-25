@@ -56,7 +56,7 @@ Start Time: 12:00 Midnight
 End Time:   11:59 PM
 ```
 
-The provider retrieval boundary remains the verified `compromised/account_group/updated` contract. Unverified provider-side date-range parameters must not be introduced by assumption.
+The provider retrieval starts from the verified `/sequence_list` cursor for the report date, then walks `compromised/account_group/updated?seqUpdate=...` until the latest available sequence. This is required so a first un-cursored page cannot hide newer records.
 
 ## One-Command Entry Point
 
@@ -273,4 +273,4 @@ Phase 4 implementation provides:
 Next after validation:
 **PHASE 7 — End-to-End Validation**
 
-Pagination/incremental retrieval parameters remain intentionally unimplemented until their runtime parameter contract is independently verified.
+Sequence-based latest-data retrieval is implemented using the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` contract.
