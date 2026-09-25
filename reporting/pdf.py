@@ -505,7 +505,7 @@ def _assessment_panel(assessment: AssessmentResult) -> Table:
         [Paragraph(escape(name), label), Paragraph(escape(value), body)]
         for name, value in assessment.basis
     ]
-    basis = Table(basis_rows, colWidths=[105, 90])
+    basis = Table(basis_rows, colWidths=[108, 90], hAlign="LEFT")
     basis.setStyle(
         TableStyle(
             [
@@ -535,7 +535,7 @@ def _assessment_panel(assessment: AssessmentResult) -> Table:
         [Paragraph("ASSESSMENT", label), Paragraph(escape(assessment.assessment), body)],
         [Paragraph("RECOMMENDED ANALYST ATTENTION", label), bullets(assessment.analyst_attention)],
     ]
-    narrative_table = Table(narrative, colWidths=[125, 610])
+    narrative_table = Table(narrative, colWidths=[115, 405], hAlign="LEFT")
     narrative_table.setStyle(
         TableStyle(
             [
@@ -552,7 +552,7 @@ def _assessment_panel(assessment: AssessmentResult) -> Table:
     )
     table = Table(
         [[narrative_table, basis]],
-        colWidths=[540, 195],
+        colWidths=[520, 203],
         hAlign="LEFT",
     )
     table.setStyle(
@@ -795,8 +795,6 @@ def generate_daily_report(
         PageBreak(),
         Paragraph("Executive Summary", section),
         _summary_table(metrics),
-        Spacer(1, 6),
-        _daily_delta_panel(metrics),
         Spacer(1, 8),
         Paragraph("Daily Threat Assessment", section),
         _assessment_panel(assessment),
