@@ -325,7 +325,7 @@ Phase 4 implementation provides:
 - earliest/latest provider timeline preservation;
 - repeat-safe transactional upsert behavior.
 
-Next after validation:
+Next validation gate:
 **PHASE 7 — End-to-End Validation**
 
 The daily report uses the bounded collection endpoint with a default 30-day provider lookback and `resultId` pagination so the current account population is not restricted to the 24-hour report window. The verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` path remains implemented and is used by `tools/groupib_latest_data_probe.py` as an independent latest-update diagnostic before the final Phase 7 end-to-end gate.
