@@ -134,18 +134,18 @@ def _record_row(
 
 
 def _record_details(record: CanonicalGroupIBRecord) -> Table:
-    """Render operational account details without exposing plaintext credentials."""
+    """Render one clear operational-detail block for a compromise record."""
     label_style = ParagraphStyle(
         "DetailLabel",
         fontName="Helvetica-Bold",
-        fontSize=6.2,
+        fontSize=6.5,
         leading=8,
         textColor=colors.HexColor("#475569"),
     )
     value_style = ParagraphStyle(
         "DetailValue",
         fontName="Helvetica",
-        fontSize=6.2,
+        fontSize=6.5,
         leading=8,
         textColor=colors.HexColor("#0F172A"),
     )
@@ -156,36 +156,30 @@ def _record_details(record: CanonicalGroupIBRecord) -> Table:
             Paragraph(escape(value), value_style),
         ]
 
-    login = _text(record.username or record.account)
-    password = "[REDACTED — credential present]" if record.credential_present else "—"
-    login_url = _text(record.login_url)
-    victim_ip = _text(_join(record.victim_ips))
-    compromised = format_ph_time(record.date_first_compromised)
-    provider = _text(_join(record.victim_providers))
-    country = _text(_join(record.victim_countries))
-    city = _text(_join(record.victim_cities))
-    source_link = _text(_join(record.source_links))
-    source_type = _text(_join(record.source_types))
-    source_name = _text(_join(record.source_names))
-
     rows = [
-        cell("Login", login) + cell("Password", password),
-        cell("Login URL", login_url) + cell("Victim's IP", victim_ip),
-        cell("Compromised", compromised) + cell("Provider", provider),
-        cell("Country", country) + cell("City", city),
-        cell("Source link", source_link) + cell("Source type", source_type),
-        cell("Source", source_name),
+        cell("Login", _text(record.username or record.account))
+        + cell("Password", _text(record.password)),
+        cell("Login URL", _text(record.login_url))
+        + cell("Victim's IP", _join(record.victim_ips)),
+        cell("Compromised", format_ph_time(record.date_first_compromised))
+        + cell("Provider", _join(record.victim_providers)),
+        cell("Country", _join(record.victim_countries))
+        + cell("City", _join(record.victim_cities)),
+        cell("Source link", _join(record.source_links))
+        + cell("Source type", _join(record.source_types)),
+        cell("Source", _join(record.source_names))
+        + cell("Threat Actor", _join(record.threat_actors)),
     ]
     table = Table(rows, colWidths=[58, 300, 58, 300], hAlign="LEFT")
     table.setStyle(
         TableStyle(
             [
                 ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
-                ("BOX", (0, 0), (-1, -1), 0.35, colors.HexColor("#CBD5E1")),
+                ("BOX", (0, 0), (-1, -1), 0.45, colors.HexColor("#CBD5E1")),
                 ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 4),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 5),
                 ("TOPPADDING", (0, 0), (-1, -1), 3),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
             ]
@@ -282,72 +276,118 @@ def _accounts_table(
     records: Sequence[CanonicalGroupIBRecord],
     *,
     include_actor: bool,
-) -> Table:
-    headers = [
-        "#",
+) -> list[object]:
+    """Render readable account blocks instead of nested tables inside table rows."""
+    story: list[object] = []
+    header_style = ParagraphStyle(
+        "AccountBlockHeader",
+        fontName="Helvetica-Bold",
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.HexColor("#172554"),
+    )
+    summary_headers = [
         "Account / Email",
         "Domain",
-        "Infostealer Family",
+        "Infostealer",
         "Source / Collection",
         "Compromised (PHT)",
         "Threat Actor",
         "First Seen (PHT)",
         "Last Seen (PHT)",
     ]
-    rows: list[list[object]] = []
-    detail_row_indices: list[int] = []
+    summary_widths = [118, 72, 88, 92, 82, 72, 92, 92]
+
     for index, record in enumerate(records, start=1):
-        rows.append([str(index), *_record_row(record, include_actor=include_actor)])
-        detail_row_indices.append(len(rows))
-        rows.append([_record_details(record), "", "", "", "", "", "", "", ""])
-    table = Table(
-        [headers, *rows],
-        repeatRows=1,
-        splitByRow=1,
-        colWidths=[20, 118, 72, 88, 92, 82, 72, 92, 92],
-        hAlign="LEFT",
-    )
-    table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E2E8F0")),
-                ("BACKGROUND", (5, 0), (5, 0), colors.HexColor("#FEF3C7")),
-                ("BACKGROUND", (7, 0), (7, 0), colors.HexColor("#DBEAFE")),
-                ("BACKGROUND", (8, 0), (8, 0), colors.HexColor("#DCFCE7")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#172554")),
-                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTNAME", (0, 1), (1, -1), "Helvetica"),
-                ("FONTNAME", (2, 1), (-1, -1), "Helvetica"),
-                ("FONTSIZE", (0, 0), (-1, -1), 6.6),
-                ("LEADING", (0, 0), (-1, -1), 8),
-                ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#CBD5E1")),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 4),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-                ("TOPPADDING", (0, 0), (-1, -1), 3),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-                ("BACKGROUND", (0, 1), (-1, -1), colors.white),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
-                ("BACKGROUND", (5, 1), (5, -1), colors.HexColor("#FFFBEB")),
-                ("BACKGROUND", (7, 1), (7, -1), colors.HexColor("#F0F7FF")),
-                ("BACKGROUND", (8, 1), (8, -1), colors.HexColor("#F0FDF4")),
-            ]
+        account_label = _text(record.account)
+        header = Table(
+            [[Paragraph(
+                f"Account #{index}  •  {escape(account_label)}",
+                header_style,
+            )]],
+            colWidths=[sum(summary_widths)],
+            hAlign="LEFT",
         )
-    )
-    for row_index in detail_row_indices:
-        table.setStyle(
+        header.setStyle(
             TableStyle(
                 [
-                    ("SPAN", (0, row_index), (-1, row_index)),
-                    ("BACKGROUND", (0, row_index), (-1, row_index), colors.HexColor("#F8FAFC")),
-                    ("LEFTPADDING", (0, row_index), (-1, row_index), 3),
-                    ("RIGHTPADDING", (0, row_index), (-1, row_index), 3),
-                    ("TOPPADDING", (0, row_index), (-1, row_index), 3),
-                    ("BOTTOMPADDING", (0, row_index), (-1, row_index), 4),
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#E0F2FE")),
+                    ("BOX", (0, 0), (-1, -1), 0.65, colors.HexColor("#7DD3FC")),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 7),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+                    ("TOPPADDING", (0, 0), (-1, -1), 5),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
                 ]
             )
         )
-    return table
+        story.extend([header, Spacer(1, 3)])
+
+        stealer = record.stealer_families[0] if record.stealer_families else None
+        source = record.source_types[0] if record.source_types else None
+        summary = Table(
+            [
+                summary_headers,
+                [
+                    _text(record.account),
+                    _text(record.domain or record.service_domain),
+                    _chip(stealer, index=_stable_chip_index(stealer)),
+                    _chip(source, index=_stable_chip_index(source)),
+                    format_ph_time(record.date_first_compromised),
+                    _join(record.threat_actors) if include_actor else "—",
+                    format_ph_time(record.date_first_seen),
+                    format_ph_time(record.date_last_seen),
+                ],
+            ],
+            colWidths=summary_widths,
+            repeatRows=1,
+            hAlign="LEFT",
+        )
+        summary.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E2E8F0")),
+                    ("BACKGROUND", (4, 0), (4, 0), colors.HexColor("#FEF3C7")),
+                    ("BACKGROUND", (6, 0), (6, 0), colors.HexColor("#DBEAFE")),
+                    ("BACKGROUND", (7, 0), (7, 0), colors.HexColor("#DCFCE7")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#172554")),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 6.6),
+                    ("LEADING", (0, 0), (-1, -1), 8),
+                    ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#CBD5E1")),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                    ("TOPPADDING", (0, 0), (-1, -1), 3),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                    ("BACKGROUND", (0, 1), (-1, 1), colors.white),
+                    ("BACKGROUND", (4, 1), (4, 1), colors.HexColor("#FFFBEB")),
+                    ("BACKGROUND", (6, 1), (6, 1), colors.HexColor("#F0F7FF")),
+                    ("BACKGROUND", (7, 1), (7, 1), colors.HexColor("#F0FDF4")),
+                ]
+            )
+        )
+        story.extend(
+            [
+                summary,
+                Spacer(1, 3),
+                Paragraph(
+                    "Operational Details",
+                    ParagraphStyle(
+                        "OperationalDetails",
+                        fontName="Helvetica-Bold",
+                        fontSize=7,
+                        leading=9,
+                        textColor=colors.HexColor("#334155"),
+                        spaceBefore=1,
+                        spaceAfter=2,
+                    ),
+                ),
+                _record_details(record),
+                Spacer(1, 8),
+            ]
+        )
+
+    return story
 
 
 def _section_banner(title: str, *, background: str, border: str) -> Table:
@@ -453,7 +493,7 @@ def generate_daily_report(
     ]
 
     if new_records:
-        quick_view_story.append(_accounts_table(new_records, include_actor=True))
+        quick_view_story.extend(_accounts_table(new_records, include_actor=True))
     else:
         quick_view_story.append(
             Paragraph("No NEW compromises were classified for this run.", note)
@@ -472,7 +512,7 @@ def generate_daily_report(
     )
 
     if historical_records:
-        quick_view_story.append(_accounts_table(historical_records, include_actor=False))
+        quick_view_story.extend(_accounts_table(historical_records, include_actor=False))
     else:
         quick_view_story.append(
             Paragraph("No OLD / HISTORICAL records were returned.", note)
