@@ -39,6 +39,26 @@ def make_record(
 
 
 class HistoryClassificationTests(unittest.TestCase):
+    def test_successful_daily_run_summary_is_durable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with HistoryStore(Path(directory) / "history.db") as store:
+                stored = store.record_daily_run(
+                    run_id="2026-09-25_1000",
+                    report_start=datetime(2026, 9, 24, 10, 0, tzinfo=timezone.utc),
+                    report_end=datetime(2026, 9, 25, 10, 0, tzinfo=timezone.utc),
+                    total_records=10,
+                    new_compromises=4,
+                    newly_detected_7d=3,
+                    historical_records=6,
+                    target_domains=("b.example.test", "a.example.test"),
+                )
+                latest = store.get_latest_daily_run()
+
+                self.assertEqual(stored.run_id, "2026-09-25_1000")
+                self.assertIsNotNone(latest)
+                self.assertEqual(latest.target_domains, ("a.example.test", "b.example.test"))
+                self.assertEqual(latest.new_compromises, 4)
+
     def test_first_observation_is_new_and_persists(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             with HistoryStore(Path(directory) / "history.db") as store:
