@@ -102,6 +102,14 @@ def run() -> int:
 
     items = tuple(dict(item) for item in response.items)
     latest = _latest_timestamp(items)
+    max_item_seq = max(
+        (
+            item.get("seqUpdate")
+            for item in items
+            if isinstance(item.get("seqUpdate"), int)
+        ),
+        default=None,
+    )
     latest_pht = latest.astimezone(PHILIPPINES_TZ).strftime(
         "%Y-%m-%d %I:%M:%S %p %Z"
     ) if latest else "NO PROVIDER TIMESTAMP"
@@ -110,7 +118,8 @@ def run() -> int:
     print(f"Sequence bootstrap date: {sequence_date}")
     print(f"Provider records retrieved: {len(items)}")
     print(f"Final seqUpdate: {response.seq_update}")
-    print(f"Latest provider timestamp: {latest_pht}")
+    print(f"Max item seqUpdate: {max_item_seq if max_item_seq is not None else 'NO ITEM SEQUENCE'}")
+    print(f"Latest compromise/event timestamp: {latest_pht}")
     print("")
     print("Latest records (metadata only; no account/password/cookie values):")
 
