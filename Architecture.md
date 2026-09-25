@@ -229,9 +229,9 @@ Partial output must not be presented as a successful daily report.
 
 ## Current Phase
 
-**PHASE 3 — Daily Retrieval & Normalization**
+**PHASE 4 — Local History & NEW/OLD Classification**
 
-Implementation is in place; final phase completion requires the local executable test suite to pass.
+Phase 3 executable validation has passed. Phase 4 implementation is in place; final phase completion requires the local executable history/classification test suite to pass.
 
 Completed gates:
 - Phase 1 — focused daily-monitoring architecture.
@@ -252,7 +252,14 @@ Phase 3 implementation now provides:
 - observation fingerprints that exclude password/session-secret fields;
 - unit tests for contract parsing and normalization.
 
+Phase 4 implementation provides:
+- SQLite durable compromise history;
+- deterministic NEW / OLD/HISTORICAL / RESEEN/RECYCLED / REPEAT outcomes;
+- local first/last observation timestamps;
+- earliest/latest provider timeline preservation;
+- repeat-safe transactional upsert behavior.
+
 Next after validation:
-**PHASE 4 — Local History & NEW/OLD Classification**
+**PHASE 5 — Quick View & Donut Charts**
 
 Pagination/incremental retrieval parameters remain intentionally unimplemented until their runtime parameter contract is independently verified.
