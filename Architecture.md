@@ -59,7 +59,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-The provider retrieval starts from the report-window start calendar date via `/sequence_list`, then walks `compromised/account_group/updated?seqUpdate=...` using the sequence cursor only. Returned records are retained from that latest sequence stream. `dateLastSeen` and `dateFirstSeen` are compromise timeline fields, not provider-update timestamps, so they are not used to discard current sequence updates. The rolling 24-hour PHT interval remains report run context until a verified provider-update timestamp is available.
+The primary daily retrieval boundary is now the documented Group-IB collection slice: `GET /compromised/account_group?df=<UTC-start>&dt=<UTC-end>&limit=500`, followed by `resultId` pagination. This directly selects the previous 24 hours through the current run time. Returned records are normalized, sorted newest-first by `dateLastSeen` (fallback `dateFirstSeen`), classified against durable history, and rendered with First Seen / Last Seen in PHT.
 
 ## One-Command Entry Point
 
