@@ -36,6 +36,14 @@ Output:
 reports/GIB_DailyReport_YYYY-MM-DD.pdf
 ```
 
+## Daily Monitoring Window
+
+Each generated report represents the full calendar day in Philippines Time (Asia/Manila):
+- Start Time: **12:00 Midnight**
+- End Time: **11:59 PM**
+
+The current provider retrieval uses the verified `compromised/account_group/updated` contract. Provider-side start/end query parameters are not assumed until independently verified.
+
 ## What the Daily Report Shows
 
 ### Quick View
