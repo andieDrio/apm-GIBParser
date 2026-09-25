@@ -60,7 +60,7 @@ def run() -> Path:
 
     observed_at = datetime.now(timezone.utc)
     report_date = observed_at.astimezone(PHILIPPINES_TZ).date().isoformat()
-    output_path = DEFAULT_REPORT_DIRECTORY / f"GroupIB_Daily_Report_{report_date}.pdf"
+    output_path = DEFAULT_REPORT_DIRECTORY / f"GIB_DailyReport_{report_date}.pdf"
 
     with GroupIBClient(
         config.username,
