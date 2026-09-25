@@ -49,7 +49,11 @@ def classify_record(
 
     NEW requires both:
     - no durable local identity match; and
-    - provider first-seen timeline is absent or falls within the configured window.
+    - the provider compromise/detection timeline is absent or falls within the configured window.
+
+    Timeline precedence is Compromised Date, Last Compromised, Date Detected,
+    then First Seen. This makes NEW represent recent compromise intelligence while
+    still tolerating providers that omit individual timestamps.
 
     A known identity is never NEW. An unchanged known fingerprint is REPEAT;
     a changed observation of a known identity is RESEEN/RECYCLED.
@@ -68,14 +72,29 @@ def classify_record(
             classification = RESEEN
             reason = "Durable identity exists but the provider observation changed."
     else:
-        provider_first_seen = _parse_timestamp(record.date_first_seen)
+        provider_timeline = (
+            record.date_first_compromised
+            or record.date_last_compromised
+            or record.date_detected
+            or record.date_first_seen
+        )
+        provider_newness_time = _parse_timestamp(provider_timeline)
         cutoff = now - timedelta(days=newness_window_days)
-        if provider_first_seen is not None and provider_first_seen < cutoff:
+        if (
+            provider_newness_time is not None
+            and provider_newness_time < cutoff
+        ):
             classification = OLD
-            reason = "Provider first-seen timestamp predates the configured newness window."
+            reason = (
+                "No durable identity exists, but the provider compromise/detection "
+                "timeline predates the configured newness window."
+            )
         else:
             classification = NEW
-            reason = "No durable identity exists and the record is within the newness policy."
+            reason = (
+                "No durable identity exists and the provider compromise/detection "
+                "timeline is within the configured newness policy."
+            )
 
     history = store.record_observation(
         record,
