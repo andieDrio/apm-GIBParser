@@ -64,7 +64,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-The PDF execution window is a rolling 24-hour operational context, but it is not used as the sole provider acquisition filter. The primary daily retrieval boundary is a bounded current-data collection slice: `GET /compromised/account_group?df=<UTC-lookback-start>&dt=<UTC-now>&limit=500`, followed by `resultId` pagination. The default provider lookback is 30 days. Returned records are normalized, sorted newest-first by `dateLastSeen` (fallback `dateFirstSeen`), classified against durable history, and rendered with First Seen / Last Seen in PHT. This separation prevents a current Group-IB account from disappearing merely because its provider timeline is older than the 24-hour report window.
+The PDF execution window is a rolling 24-hour operational context, but it is not used as the sole provider acquisition filter. The primary daily retrieval boundary is a bounded current-data collection slice: `GET /compromised/account_group?df=<UTC-lookback-start>&dt=<UTC-now>&limit=500`, followed by `resultId` pagination. The default provider lookback is 30 days. Returned records are normalized, sorted newest-first by `dateLastSeen` (fallback `dateFirstSeen`), classified against durable history, and rendered with normalized provider timestamps. This separation prevents a current Group-IB account from disappearing merely because its provider timeline is older than the 24-hour report window.
 
 ## Provider Lookback Configuration
 
@@ -251,7 +251,7 @@ Recommended structure:
 
 **Page 1 — Daily Quick View**
 - title/date
-- Asia/Manila (PHT) timezone indicator
+- normalized provider timestamp presentation
 - boxed color-coded bar-chart panels
 - combined infostealer/source panel
 - separate target-domain panel
@@ -317,7 +317,7 @@ Partial output must not be presented as a successful daily report.
 
 **PHASE 7 — End-to-End Validation & Evidence-Based Assessment — ACTIVE**
 
-Phases 1–5 are implemented. Phase 6 now includes one-command PDF generation, professional boxed color bar charts, full account correlation, and provider timestamp conversion to Asia/Manila (PHT). Runtime/presentation validation is the active gate.
+Phases 1–5 are implemented. Phase 6 now includes one-command PDF generation, professional boxed color bar charts, full account correlation, and provider timestamp normalization. Runtime/presentation validation is the active gate.
 
 Completed gates:
 - Phase 1 — focused daily-monitoring architecture.
