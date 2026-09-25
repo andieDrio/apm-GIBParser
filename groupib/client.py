@@ -138,9 +138,12 @@ class GroupIBClient:
             all_items.extend(page.items)
             if not page.items or page.count <= 0:
                 break
-            if page.seq_update <= last_sequence_update:
+            item_sequence = page.items[-1].get("seqUpdate") if page.items else None
+            if not isinstance(item_sequence, int) or isinstance(item_sequence, bool):
+                raise GroupIBSchemaError("Group-IB item is missing a valid seqUpdate.")
+            if item_sequence <= last_sequence_update:
                 raise GroupIBSchemaError("Group-IB sequence cursor did not advance.")
-            last_sequence_update = page.seq_update
+            last_sequence_update = item_sequence
 
         return GroupIBResponse(
             count=len(all_items),
@@ -186,11 +189,16 @@ class GroupIBClient:
             value = payload.get("seqUpdate")
             if isinstance(value, int) and not isinstance(value, bool):
                 return value
-        if isinstance(payload, list) and payload:
-            value = payload[0].get("seqUpdate") if isinstance(payload[0], dict) else None
-            if isinstance(value, int) and not isinstance(value, bool):
-                return value
-        raise GroupIBSchemaError("Group-IB sequence response has no valid seqUpdate.")
+            listing = payload.get("list")
+            if isinstance(listing, dict):
+                value = listing.get("compromised/account_group")
+                if isinstance(value, int) and not isinstance(value, bool):
+                    return value
+                if isinstance(value, str) and value.isdigit():
+                    return int(value)
+        raise GroupIBSchemaError(
+            "Group-IB sequence response has no valid compromised/account_group seqUpdate."
+        )
 
     @staticmethod
     def _parse_response(payload: Any) -> GroupIBResponse:
