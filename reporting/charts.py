@@ -1,76 +1,231 @@
-"""Compact data-driven bar chart primitives for ReportLab reports."""
+"""Professional, data-driven bar chart panels for ReportLab reports."""
 
 from __future__ import annotations
 
 from collections.abc import Iterable
 
-from reportlab.graphics.shapes import Drawing, Rect, String
+from reportlab.graphics.shapes import Drawing, Line, Rect, RoundRect, String
+from reportlab.lib import colors
 
 
 MAX_CATEGORIES = 18
-MAX_CHART_HEIGHT = 450
+PANEL_HEIGHT = 350
+BAR_PALETTE = (
+    colors.HexColor("#2F80ED"),
+    colors.HexColor("#EB5757"),
+    colors.HexColor("#27AE60"),
+    colors.HexColor("#F2994A"),
+    colors.HexColor("#9B51E0"),
+    colors.HexColor("#2D9CDB"),
+    colors.HexColor("#E83E8C"),
+    colors.HexColor("#F2C94C"),
+)
 
 
-def _chart(title: str, values: Iterable[tuple[str, int]]) -> Drawing | None:
-    data = tuple((str(label), count) for label, count in values if count > 0)
-    if not data:
-        return None
+def _data(values: Iterable[tuple[str, int]]) -> tuple[tuple[str, int], ...]:
+    return tuple(
+        sorted(
+            ((str(label), count) for label, count in values if count > 0),
+            key=lambda item: (-item[1], item[0].casefold()),
+        )[:MAX_CATEGORIES]
+    )
 
-    data = tuple(sorted(data, key=lambda item: (-item[1], item[0].casefold())))[:MAX_CATEGORIES]
-    drawing = Drawing(360, min(MAX_CHART_HEIGHT, max(150, 42 + 22 * len(data))))
 
-    max_value = max(count for _, count in data)
-    chart_left = 145
-    chart_top = drawing.height - 28
-    bar_height = 12
-    row_height = 22
-
+def _bar_section(
+    drawing: Drawing,
+    *,
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    title: str,
+    values: Iterable[tuple[str, int]],
+) -> None:
+    data = _data(values)
     drawing.add(
         String(
-            drawing.width / 2,
-            drawing.height - 12,
+            x + width / 2,
+            y + height - 20,
             title,
             textAnchor="middle",
             fontName="Helvetica-Bold",
             fontSize=9,
+            fillColor=colors.HexColor("#172554"),
         )
     )
+    if not data:
+        drawing.add(
+            String(
+                x + width / 2,
+                y + height / 2,
+                "No verified data",
+                textAnchor="middle",
+                fontName="Helvetica",
+                fontSize=8,
+                fillColor=colors.HexColor("#64748B"),
+            )
+        )
+        return
+
+    max_value = max(count for _, count in data)
+    row_height = min(17, (height - 48) / max(len(data), 1))
+    bar_height = max(7, row_height - 5)
+    label_x = x + 104
+    bar_x = label_x + 6
+    bar_width = max(55, width - (label_x - x) - 46)
+    chart_top = y + height - 40
 
     for index, (label, count) in enumerate(data):
-        y = chart_top - index * row_height - bar_height
-        width = 175 * count / max_value if max_value else 0
+        row_y = chart_top - (index + 1) * row_height
+        color = BAR_PALETTE[index % len(BAR_PALETTE)]
         drawing.add(
             String(
-                chart_left - 6,
-                y + 2,
-                label[:28],
+                label_x,
+                row_y + 3,
+                label[:24],
                 textAnchor="end",
                 fontName="Helvetica",
-                fontSize=7,
+                fontSize=6.8,
+                fillColor=colors.HexColor("#1E293B"),
             )
         )
-        drawing.add(Rect(chart_left, y, width, bar_height, strokeWidth=0))
+        width_value = bar_width * count / max_value if max_value else 0
+        drawing.add(
+            RoundRect(
+                bar_x,
+                row_y,
+                width_value,
+                bar_height,
+                radius=2,
+                fillColor=color,
+                strokeWidth=0,
+            )
+        )
         drawing.add(
             String(
-                chart_left + width + 5,
-                y + 2,
+                bar_x + width_value + 5,
+                row_y + 3,
                 str(count),
                 fontName="Helvetica-Bold",
-                fontSize=7,
+                fontSize=6.8,
+                fillColor=colors.HexColor("#0F172A"),
             )
         )
 
+
+def paired_distribution_panel(
+    left_title: str,
+    left_values: Iterable[tuple[str, int]],
+    right_title: str,
+    right_values: Iterable[tuple[str, int]],
+) -> Drawing:
+    """Return one boxed panel containing two compact categorical bar charts."""
+    drawing = Drawing(370, PANEL_HEIGHT)
+    drawing.add(
+        RoundRect(
+            2,
+            2,
+            366,
+            PANEL_HEIGHT - 4,
+            radius=8,
+            fillColor=colors.white,
+            strokeColor=colors.HexColor("#93C5FD"),
+            strokeWidth=0.8,
+        )
+    )
+    drawing.add(
+        Line(
+            185,
+            25,
+            185,
+            PANEL_HEIGHT - 25,
+            strokeColor=colors.HexColor("#CBD5E1"),
+            strokeWidth=0.6,
+        )
+    )
+    _bar_section(
+        drawing,
+        x=8,
+        y=8,
+        width=171,
+        height=PANEL_HEIGHT - 16,
+        title=left_title,
+        values=left_values,
+    )
+    _bar_section(
+        drawing,
+        x=191,
+        y=8,
+        width=171,
+        height=PANEL_HEIGHT - 16,
+        title=right_title,
+        values=right_values,
+    )
+    return drawing
+
+
+def distribution_panel(
+    title: str,
+    values: Iterable[tuple[str, int]],
+) -> Drawing:
+    """Return one boxed categorical bar-chart panel."""
+    drawing = Drawing(370, PANEL_HEIGHT)
+    drawing.add(
+        RoundRect(
+            2,
+            2,
+            366,
+            PANEL_HEIGHT - 4,
+            radius=8,
+            fillColor=colors.white,
+            strokeColor=colors.HexColor("#86EFAC"),
+            strokeWidth=0.8,
+        )
+    )
+    _bar_section(
+        drawing,
+        x=12,
+        y=8,
+        width=346,
+        height=PANEL_HEIGHT - 16,
+        title=title,
+        values=values,
+    )
     return drawing
 
 
 def new_vs_historical(*, new_count: int, historical_count: int) -> Drawing | None:
-    """Return a NEW vs historical bar chart, or None when both are zero."""
-    return _chart(
-        "NEW vs OLD / HISTORICAL",
-        (("NEW", new_count), ("OLD / HISTORICAL", historical_count)),
+    """Return the legacy NEW-vs-historical chart for compatibility."""
+    data = _data((("NEW", new_count), ("OLD / HISTORICAL", historical_count)))
+    if not data:
+        return None
+    drawing = Drawing(360, 150)
+    drawing.add(
+        RoundRect(
+            2,
+            2,
+            356,
+            146,
+            radius=8,
+            fillColor=colors.white,
+            strokeColor=colors.HexColor("#CBD5E1"),
+            strokeWidth=0.8,
+        )
     )
+    _bar_section(
+        drawing,
+        x=8,
+        y=8,
+        width=344,
+        height=134,
+        title="NEW vs OLD / HISTORICAL",
+        values=data,
+    )
+    return drawing
 
 
 def distribution(title: str, values: Iterable[tuple[str, int]]) -> Drawing | None:
-    """Return a categorical bar chart for a verified distribution."""
-    return _chart(title, values)
+    """Return a standalone boxed distribution chart for compatibility."""
+    if not _data(values):
+        return None
+    return distribution_panel(title, values)
