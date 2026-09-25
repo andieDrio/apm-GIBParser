@@ -195,7 +195,21 @@ def run() -> Path:
         metrics=metrics,
         classifications=classifications,
         records=records,
+        run_id=output_stamp,
+        retrieved_count=len(response.items),
+        normalized_count=len(records),
     )
+        history.record_daily_run(
+            run_id=output_stamp,
+            report_start=window.start,
+            report_end=window.end,
+            total_records=len(records),
+            new_compromises=metrics.new_compromises,
+            newly_detected_7d=metrics.newly_detected_7d,
+            historical_records=metrics.old_historical,
+            target_domains=tuple(domain for domain, _ in metrics.target_domain_counts),
+        )
+    return generated
 
 
 def main() -> int:
