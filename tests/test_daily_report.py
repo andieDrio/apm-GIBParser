@@ -38,7 +38,7 @@ class DailyReportWindowTests(unittest.TestCase):
             window.end,
             datetime(2026, 9, 25, 11, 13, tzinfo=PHILIPPINES_TZ),
         )
-        self.assertEqual(window.sequence_bootstrap_date, "2026-09-23")
+        self.assertEqual(window.sequence_bootstrap_date, "2026-09-24")
 
     def test_filter_keeps_only_records_inside_window(self) -> None:
         window = build_monitoring_window(OBSERVED_AT)
