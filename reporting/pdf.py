@@ -334,7 +334,11 @@ def _accounts_table(
 
         rows.append(
             [
-                value(format_ph_time(record.date_first_compromised)),
+                value(
+                    format_ph_time(
+                        record.date_first_compromised or record.date_last_compromised
+                    )
+                ),
                 value(format_ph_time(record.date_first_seen)),
                 value(format_ph_time(record.date_last_seen)),
                 value(_text(record.domain or record.service_domain)),
