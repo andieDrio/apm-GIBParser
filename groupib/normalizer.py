@@ -47,6 +47,7 @@ class CanonicalGroupIBRecord:
     domain: str | None
     date_first_compromised: str | None
     date_last_compromised: str | None
+    date_detected: str | None
     date_first_seen: str | None
     date_last_seen: str | None
     event_count: int
@@ -116,6 +117,19 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
     first_seen = _text(item.get("dateFirstSeen"))
     last_seen = _text(item.get("dateLastSeen"))
 
+    detected = _text(item.get("dateDetected")) or _text(item.get("detectedAt"))
+    event_detected_dates = tuple(
+        value
+        for value in (
+            _text(event.get("dateDetected"))
+            or _text(event.get("detectedAt"))
+            for event in events
+        )
+        if value
+    )
+    if detected is None and event_detected_dates:
+        detected = min(event_detected_dates)
+
     # Group-IB's current account_group contract exposes dateFirstCompromised /
     # dateLastCompromised at item level. Some provider records/legacy shapes can
     # instead expose dateCompromised (or compromisedAt) at the item/event level.
@@ -158,7 +172,8 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
         dict.fromkeys(
             value
             for value in (
-                _text(source.get("url"))
+                _text(source.get("id"))
+                or _text(source.get("url"))
                 or _text(source.get("link"))
                 or _text(source.get("href"))
                 for source in source_objects
@@ -166,7 +181,23 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
             if value
         )
     )
-    source_names = tuple(
+    event_source_objects = tuple(
+        _object(event.get("source"))
+        for event in events
+        if isinstance(event.get("source"), dict)
+    )
+    event_source_names = tuple(
+        dict.fromkeys(
+            value
+            for value in (
+                _text(source.get("name"))
+                or _text(source.get("type"))
+                for source in event_source_objects
+            )
+            if value
+        )
+    )
+    top_level_source_names = tuple(
         dict.fromkeys(
             value
             for value in (
@@ -176,6 +207,9 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
             )
             if value
         )
+    )
+    source_names = tuple(
+        dict.fromkeys((*event_source_names, *top_level_source_names))
     )
 
     malware_objects = _objects(item.get("malware"))
@@ -291,6 +325,7 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
         "domain": domain,
         "first_compromised": first_compromised,
         "last_compromised": last_compromised,
+        "detected": detected,
         "first_seen": first_seen,
         "last_seen": last_seen,
         "event_count": event_count,
@@ -326,6 +361,7 @@ def normalize_record(item: Mapping[str, Any]) -> CanonicalGroupIBRecord:
         domain=domain,
         date_first_compromised=first_compromised,
         date_last_compromised=last_compromised,
+        date_detected=detected,
         date_first_seen=first_seen,
         date_last_seen=last_seen,
         event_count=event_count,
