@@ -231,6 +231,8 @@ Partial output must not be presented as a successful daily report.
 
 **PHASE 3 — Daily Retrieval & Normalization**
 
+Implementation is in place; final phase completion requires the local executable test suite to pass.
+
 Completed gates:
 - Phase 1 — focused daily-monitoring architecture.
 - Phase 2 — Group-IB runtime authentication and response-schema verification.
@@ -250,7 +252,7 @@ Phase 3 implementation now provides:
 - observation fingerprints that exclude password/session-secret fields;
 - unit tests for contract parsing and normalization.
 
-Next:
+Next after validation:
 **PHASE 4 — Local History & NEW/OLD Classification**
 
 Pagination/incremental retrieval parameters remain intentionally unimplemented until their runtime parameter contract is independently verified.
