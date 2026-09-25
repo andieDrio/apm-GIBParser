@@ -61,6 +61,23 @@ Window end:    Sep 25, 2026 11:13 AM PHT
 
 The PDF execution window is a rolling 24-hour operational context, but it is not used as the sole provider acquisition filter. The primary daily retrieval boundary is a bounded current-data collection slice: `GET /compromised/account_group?df=<UTC-lookback-start>&dt=<UTC-now>&limit=500`, followed by `resultId` pagination. The default provider lookback is 30 days. Returned records are normalized, sorted newest-first by `dateLastSeen` (fallback `dateFirstSeen`), classified against durable history, and rendered with First Seen / Last Seen in PHT. This separation prevents a current Group-IB account from disappearing merely because its provider timeline is older than the 24-hour report window.
 
+## Provider Lookback Configuration
+
+The PDF execution window and provider acquisition window are deliberately separate.
+
+```text
+PDF report window:       exact previous 24 hours
+Provider latest lookback: default 30 days
+```
+
+The provider lookback is configurable through:
+
+```bash
+GROUP_IB_LATEST_LOOKBACK_DAYS=30
+```
+
+The application bounds this value to 30 days. The broader provider window is required so current records such as a Group-IB account last seen several days/weeks ago can still be returned and classified as historical rather than disappearing from the report.
+
 ## One-Command Entry Point
 
 ```bash
