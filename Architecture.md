@@ -59,7 +59,7 @@ Window start:  Sep 24, 2026 11:13 AM PHT
 Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-The provider retrieval starts from a safe `/sequence_list` calendar-date cursor, then walks `compromised/account_group/updated?seqUpdate=...` with the documented `df` / `dt` bounds. The application also performs an exact local timestamp filter using `dateLastSeen` (falling back to `dateFirstSeen`). This prevents the report from being constrained to midnight-to-midnight calendar dates while retaining the verified sequence-based latest-data retrieval path.
+The provider retrieval starts from a safe `/sequence_list` calendar-date cursor, then walks `compromised/account_group/updated?seqUpdate=...` using the sequence cursor only. The application performs the exact rolling-window timestamp filter locally using `dateLastSeen` (falling back to `dateFirstSeen`). This deliberately separates provider-current retrieval from report-window selection.
 
 ## One-Command Entry Point
 
@@ -75,8 +75,8 @@ The entry point owns orchestration only. It should not contain HTTP parsing, cla
 Responsibilities:
 - load server/local credentials;
 - authenticate using the verified Group-IB contract;
-- retrieve the required rolling 24-hour collection;
-- use documented `df` / `dt` bounds together with the verified `seqUpdate` cursor;
+- retrieve the latest verified sequence stream;
+- apply the rolling 24-hour report window after normalization rather than constraining provider-current acquisition;
 - handle timeout, HTTP errors and rate limits;
 - return provider payloads without leaking secrets.
 
@@ -244,7 +244,7 @@ Partial output must not be presented as a successful daily report.
 
 ## Current Phase
 
-**PHASE 6 — One-Command PDF Reporting & Presentation**
+**PHASE 6 — One-Command PDF Reporting & Presentation — LATEST-PROVIDER RETRIEVAL GATE**
 
 Phases 1–5 are implemented. Phase 6 now includes one-command PDF generation, professional boxed color bar charts, full account correlation, and provider timestamp conversion to Asia/Manila (PHT). Runtime/presentation validation is the active gate.
 
@@ -277,4 +277,4 @@ Phase 4 implementation provides:
 Next after validation:
 **PHASE 7 — End-to-End Validation**
 
-Rolling-window latest-data retrieval is implemented using the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` contract with documented `df` / `dt` bounds and exact local timestamp filtering.
+Rolling-window latest-data retrieval is implemented using the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` sequence contract with exact local timestamp filtering. Provider-side `df` / `dt` are intentionally not used in the latest-data path. `tools/groupib_latest_data_probe.py` provides an independent provider-current diagnostic before the final Phase 7 end-to-end gate.
