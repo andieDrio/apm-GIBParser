@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 from groupib.normalizer import normalize_record
-from reporting.pdf import generate_daily_report, mask_account
+from reporting.pdf import format_ph_time, generate_daily_report, mask_account
 from reporting.summary import build_quick_view
 from storage.classifier import classify_record
 from storage.history import HistoryStore
@@ -36,6 +36,12 @@ class PdfReportTests(unittest.TestCase):
     def test_account_identifier_is_reportable_in_full(self) -> None:
         masked = mask_account("alice@example.test")
         self.assertEqual(masked, "alice@example.test")
+
+    def test_provider_timestamp_is_converted_to_philippines_time(self) -> None:
+        self.assertEqual(
+            format_ph_time("2026-09-25T01:00:00Z"),
+            "Sep 25, 2026 09:00 AM",
+        )
 
     def test_generates_dated_pdf_without_secret_fields(self) -> None:
         records = (
