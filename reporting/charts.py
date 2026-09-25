@@ -14,11 +14,11 @@ def _chart(title: str, values: Iterable[tuple[str, int]]) -> Drawing | None:
         return None
 
     total = sum(count for _, count in data)
-    drawing = Drawing(320, 210)
-    center_x = 92
-    center_y = 100
-    outer_radius = 62
-    inner_radius = 35
+    drawing = Drawing(250, 170)
+    center_x = 70
+    center_y = 80
+    outer_radius = 48
+    inner_radius = 27
 
     start = 90.0
     for label, count in data:
@@ -30,8 +30,8 @@ def _chart(title: str, values: Iterable[tuple[str, int]]) -> Drawing | None:
 
         mid_angle = (start + end) / 2.0
         angle = radians(mid_angle)
-        label_x = center_x + 82 * cos(angle)
-        label_y = center_y + 82 * sin(angle)
+        label_x = center_x + 64 * cos(angle)
+        label_y = center_y + 64 * sin(angle)
         drawing.add(
             String(
                 label_x,
@@ -39,7 +39,7 @@ def _chart(title: str, values: Iterable[tuple[str, int]]) -> Drawing | None:
                 f"{label}: {count}",
                 textAnchor="middle",
                 fontName="Helvetica",
-                fontSize=8,
+                fontSize=7,
             )
         )
         start = end
@@ -60,17 +60,17 @@ def _chart(title: str, values: Iterable[tuple[str, int]]) -> Drawing | None:
             str(total),
             textAnchor="middle",
             fontName="Helvetica-Bold",
-            fontSize=12,
+            fontSize=11,
         )
     )
     drawing.add(
         String(
-            160,
-            190,
+            125,
+            153,
             title,
             textAnchor="middle",
             fontName="Helvetica-Bold",
-            fontSize=10,
+            fontSize=9,
         )
     )
     return drawing
