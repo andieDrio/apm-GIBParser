@@ -133,6 +133,7 @@ class PdfReportTests(unittest.TestCase):
             self.assertTrue(payload.startswith(b"%PDF-"))
             self.assertEqual(records[0].password, "plaintext-secret-must-not-be-rendered")
             self.assertEqual(records[1].password, "plaintext-secret-must-not-be-rendered")
+            self.assertIn(b"%%EOF", payload)
 
 
 if __name__ == "__main__":
