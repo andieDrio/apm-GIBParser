@@ -41,10 +41,8 @@ class MonitoringWindow:
 
     @property
     def sequence_bootstrap_date(self) -> str:
-        """Return a safe calendar date for the provider sequence cursor."""
-        return (
-            self.start.astimezone(PHILIPPINES_TZ).date() - timedelta(days=1)
-        ).isoformat()
+        """Return the report-window start calendar date for the provider cursor."""
+        return self.start.astimezone(PHILIPPINES_TZ).date().isoformat()
 
 
 def build_monitoring_window(observed_at: datetime) -> MonitoringWindow:
@@ -148,7 +146,10 @@ def run() -> Path:
         )
 
     provider_records = normalize_response(response.items)
-    records = filter_records_to_window(provider_records, window)
+    # Do not filter latest sequence results by dateLastSeen/dateFirstSeen.
+    # Those fields describe the compromise timeline, not when the provider
+    # updated the record. seqUpdate is the verified latest-data ordering.
+    records = provider_records
 
     with HistoryStore(DEFAULT_HISTORY_PATH) as history:
         classifications = classify_records(
