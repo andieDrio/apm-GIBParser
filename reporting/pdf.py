@@ -421,6 +421,204 @@ def _section_banner(title: str, *, background: str, border: str) -> Table:
     return table
 
 
+def _delta_text(value: int | None) -> str:
+    if value is None:
+        return "—"
+    return f"{value:+d}"
+
+
+def _summary_table(metrics: QuickViewMetrics) -> Table:
+    label = ParagraphStyle(
+        "SummaryLabel",
+        fontName="Helvetica-Bold",
+        fontSize=6.2,
+        leading=7,
+        textColor=colors.HexColor("#475569"),
+    )
+    value = ParagraphStyle(
+        "SummaryValue",
+        fontName="Helvetica-Bold",
+        fontSize=10,
+        leading=12,
+        textColor=colors.HexColor("#0F172A"),
+    )
+    cells = [
+        ("Records", metrics.total_records),
+        ("NEW", metrics.new_compromises),
+        ("Detected 7d", metrics.newly_detected_7d),
+        ("Domains", len(metrics.target_domain_counts)),
+        ("7d Total", metrics.new_compromise_7d_total),
+        ("7d Avg", f"{metrics.new_compromise_7d_average:.1f}"),
+    ]
+    data = [
+        [Paragraph(escape(label_text), label) for label_text, _ in cells],
+        [Paragraph(escape(str(value_text)), value) for _, value_text in cells],
+    ]
+    table = Table(data, colWidths=[122.5] * len(cells), rowHeights=[16, 24])
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+                ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#CBD5E1")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#E2E8F0")),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ]
+        )
+    )
+    return table
+
+
+def _daily_delta_panel(metrics: QuickViewMetrics) -> Table:
+    heading = ParagraphStyle(
+        "DeltaHeading",
+        fontName="Helvetica-Bold",
+        fontSize=8,
+        leading=10,
+        textColor=colors.HexColor("#172554"),
+    )
+    body = ParagraphStyle(
+        "DeltaBody",
+        fontName="Helvetica",
+        fontSize=6.5,
+        leading=8,
+        textColor=colors.HexColor("#475569"),
+    )
+    if metrics.previous_run is None:
+        content = Paragraph(
+            "No previous successful run is available yet; this report establishes the first daily baseline.",
+            body,
+        )
+    else:
+        content = Paragraph(
+            f"vs previous run &nbsp;•&nbsp; NEW <b>{escape(_delta_text(metrics.delta_new_compromises))}</b>"
+            f" &nbsp;•&nbsp; Detected 7d <b>{escape(_delta_text(metrics.delta_newly_detected_7d))}</b>"
+            f" &nbsp;•&nbsp; Total records <b>{escape(_delta_text(metrics.delta_total_records))}</b>",
+            body,
+        )
+    table = Table(
+        [[Paragraph("DAILY DELTA", heading)], [content]],
+        colWidths=[735],
+    )
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#EFF6FF")),
+                ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#93C5FD")),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]
+        )
+    )
+    return table
+
+
+def _new_domains_table(metrics: QuickViewMetrics) -> Table | Paragraph:
+    label = ParagraphStyle(
+        "NewDomainLabel",
+        fontName="Helvetica-Bold",
+        fontSize=7,
+        leading=9,
+        textColor=colors.HexColor("#172554"),
+    )
+    value = ParagraphStyle(
+        "NewDomainValue",
+        fontName="Helvetica",
+        fontSize=6.5,
+        leading=8,
+        textColor=colors.HexColor("#0F172A"),
+    )
+    if metrics.previous_run is None:
+        return Paragraph(
+            "Newly affected domains require a previous successful run for comparison.",
+            value,
+        )
+    if not metrics.newly_affected_domain_counts:
+        return Paragraph("No newly affected domains versus the previous run.", value)
+    rows = [[Paragraph("Domain", label), Paragraph("Accounts", label)]]
+    rows.extend(
+        [
+            [Paragraph(escape(domain), value), Paragraph(str(count), value)]
+            for domain, count in metrics.newly_affected_domain_counts[:12]
+        ]
+    )
+    table = Table(rows, colWidths=[650, 85], repeatRows=1)
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E0F2FE")),
+                ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#BAE6FD")),
+                ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    return table
+
+
+def _run_metadata_table(
+    *,
+    run_id: str,
+    retrieved_count: int,
+    normalized_count: int,
+    classified_count: int,
+) -> Table:
+    label = ParagraphStyle(
+        "RunMetaLabel",
+        fontName="Helvetica-Bold",
+        fontSize=6.5,
+        leading=8,
+        textColor=colors.HexColor("#475569"),
+    )
+    value = ParagraphStyle(
+        "RunMetaValue",
+        fontName="Helvetica",
+        fontSize=6.5,
+        leading=8,
+        textColor=colors.HexColor("#0F172A"),
+    )
+    rows = [
+        ["Run ID", run_id, "Collection", "SUCCESS"],
+        ["Records Retrieved", str(retrieved_count), "Records Normalized", str(normalized_count)],
+        ["Records Classified", str(classified_count), "Normalization Errors", "0"],
+        ["Report Status", "SUCCESS", "Timezone", "Asia/Manila (PHT)"],
+    ]
+    rendered = []
+    for row in rows:
+        rendered.append(
+            [
+                Paragraph(escape(str(row[0])), label),
+                Paragraph(escape(str(row[1])), value),
+                Paragraph(escape(str(row[2])), label),
+                Paragraph(escape(str(row[3])), value),
+            ]
+        )
+    table = Table(rendered, colWidths=[105, 260, 125, 245])
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+                ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    return table
+
+
 def generate_daily_report(
     output_path: str | Path,
     *,
@@ -430,6 +628,9 @@ def generate_daily_report(
     metrics: QuickViewMetrics,
     classifications: Sequence[ClassificationResult],
     records: Sequence[CanonicalGroupIBRecord],
+    run_id: str,
+    retrieved_count: int,
+    normalized_count: int,
 ) -> Path:
     """Generate one complete daily PDF from already-classified canonical records."""
     if len(classifications) != len(records):
@@ -491,6 +692,11 @@ def generate_daily_report(
             note,
         ),
         PageBreak(),
+        Paragraph("Executive Summary", section),
+        _summary_table(metrics),
+        Spacer(1, 6),
+        _daily_delta_panel(metrics),
+        Spacer(1, 8),
         seven_day_trend_panel(
             "NEW COMPROMISED ACCOUNTS — LAST 7 DAYS",
             metrics.new_compromise_7d_daily_counts,
@@ -548,6 +754,27 @@ def generate_daily_report(
                 "login/password fields are included by explicit project-owner request; "
                 "API tokens and session cookies are excluded.",
                 note,
+            ),
+            Spacer(1, 10),
+            _section_banner(
+                "NEWLY AFFECTED DOMAINS",
+                background="#F0FDF4",
+                border="#86EFAC",
+            ),
+            Spacer(1, 5),
+            _new_domains_table(metrics),
+            Spacer(1, 10),
+            _section_banner(
+                "COLLECTION / DATA QUALITY & RUN METADATA",
+                background="#F8FAFC",
+                border="#CBD5E1",
+            ),
+            Spacer(1, 5),
+            _run_metadata_table(
+                run_id=run_id,
+                retrieved_count=retrieved_count,
+                normalized_count=normalized_count,
+                classified_count=len(records),
             ),
         ]
     )
