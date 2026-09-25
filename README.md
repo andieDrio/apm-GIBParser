@@ -79,15 +79,19 @@ Sensitive data is minimized:
 
 ## Current Provider Boundary
 
-Group-IB API authentication and response structure must be verified before the production client is implemented.
+The Group-IB runtime contract has now been verified with a successful HTTP 200 response from the configured account. The production boundary uses the verified Personal Token authentication model and the verified `compromised/account_group/updated` endpoint.
 
 The repository contains:
 
 ```
 tools/groupib_contract_probe.py
+groupib/client.py
+groupib/normalizer.py
+tests/test_groupib_client.py
+tests/test_groupib_normalizer.py
 ```
 
-The probe performs a bounded request and reports field names/types without printing response values.
+The probe reports field names/types without printing response values. The production client validates the provider envelope before normalization, and the canonical model excludes password/session-secret fields.
 
 ## Repository Layout
 
@@ -141,8 +145,10 @@ REPEAT
 
 ## Current Phase
 
-**PHASE 1 — Focused Daily-Monitoring Architecture**
+**PHASE 3 — Daily Retrieval & Normalization — COMPLETE**
 
-The repository is being reduced from the earlier web-application concept to the clarified daily monitoring/reporting workflow.
+Phase 1 and Phase 2 are complete. Phase 3 now has the verified provider client, canonical normalization boundary, deterministic identity fallback, observation fingerprinting, and executable unit tests.
 
-Next gate: **PHASE 2 — Group-IB Runtime Contract**.
+Next gate: **PHASE 4 — Local History & NEW/OLD Classification**.
+
+Pagination/incremental retrieval parameters remain intentionally deferred until independently verified.
