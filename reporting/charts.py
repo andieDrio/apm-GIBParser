@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from reportlab.graphics.shapes import Drawing, Line, Rect, String
+from reportlab.pdfbase import pdfmetrics
 from reportlab.lib import colors
 
 
@@ -72,7 +73,14 @@ def _bar_section(
     bar_height = max(7, row_height - 5)
     label_x = x + 104
     bar_x = label_x + 6
-    bar_width = max(55, width - (label_x - x) - 46)
+    value_font_name = "Helvetica-Bold"
+    value_font_size = 6.8
+    value_column = max(
+        pdfmetrics.stringWidth(str(count), value_font_name, value_font_size)
+        for _, count in data
+    ) + 12
+    available_bar_width = width - (label_x - x) - 6 - value_column
+    bar_width = max(45, available_bar_width)
     chart_top = y + height - 40
 
     for index, (label, count) in enumerate(data):
@@ -100,13 +108,23 @@ def _bar_section(
                 strokeWidth=0,
             )
         )
+        value_text = str(count)
+        value_width = pdfmetrics.stringWidth(
+            value_text,
+            value_font_name,
+            value_font_size,
+        )
+        value_x = min(
+            bar_x + width_value + 5,
+            x + width - value_column + (value_column - value_width) / 2,
+        )
         drawing.add(
             String(
-                bar_x + width_value + 5,
+                value_x,
                 row_y + 3,
-                str(count),
-                fontName="Helvetica-Bold",
-                fontSize=6.8,
+                value_text,
+                fontName=value_font_name,
+                fontSize=value_font_size,
                 fillColor=colors.HexColor("#0F172A"),
             )
         )
