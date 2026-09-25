@@ -84,7 +84,7 @@ def _classified_rows(
 
 class _ReportDocument(BaseDocTemplate):
     def __init__(self, filename: str | Path, **kwargs: object) -> None:
-        super().__init__(filename, pagesize=A4, **kwargs)
+        super().__init__(str(filename), pagesize=A4, **kwargs)
         frame = Frame(
             15 * mm,
             15 * mm,
