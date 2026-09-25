@@ -173,14 +173,8 @@ class HistoryStore:
             ON CONFLICT(compromise_identity) DO UPDATE SET
                 provider_record_id = excluded.provider_record_id,
                 last_local_seen = excluded.last_local_seen,
-                first_provider_seen = COALESCE(
-                    compromises.first_provider_seen,
-                    excluded.first_provider_seen
-                ),
-                last_provider_seen = COALESCE(
-                    excluded.last_provider_seen,
-                    compromises.last_provider_seen
-                ),
+                first_provider_seen = excluded.first_provider_seen,
+                last_provider_seen = excluded.last_provider_seen,
                 last_classification = excluded.last_classification,
                 last_observation_fingerprint = excluded.last_observation_fingerprint,
                 updated_at = excluded.updated_at
