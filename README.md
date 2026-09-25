@@ -42,7 +42,7 @@ Each generated report represents the full calendar day in Philippines Time (Asia
 - Start Time: **12:00 Midnight**
 - End Time: **11:59 PM**
 
-The current provider retrieval uses the verified `compromised/account_group/updated` contract. Provider-side start/end query parameters are not assumed until independently verified.
+The provider retrieval now starts from the verified Group-IB `/sequence_list` cursor for the report date, then paginates `compromised/account_group/updated` forward to the newest available sequence. This avoids relying on the first un-cursored 500 records, which can represent older data.
 
 ## What the Daily Report Shows
 
@@ -157,4 +157,4 @@ Phases 1–5 are implemented and the daily runtime now generates the PDF. The cu
 
 After PDF presentation/runtime validation, the next gate is **PHASE 7 — End-to-End Validation**.
 
-Pagination/incremental retrieval parameters remain intentionally deferred until independently verified.
+Sequence-based latest-data retrieval is implemented using the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` flow.
