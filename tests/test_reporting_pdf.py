@@ -29,10 +29,13 @@ def make_record(*, record_id: str, login: str, first_seen: str) -> object:
             "login": login,
             "dateFirstSeen": first_seen,
             "dateLastSeen": first_seen,
+            "dateDetected": first_seen,
             "events": [
                 {
                     "id": f"event-{record_id}",
                     "dateCompromised": first_seen,
+                    "dateDetected": first_seen,
+                    "source": {"name": "Private channel", "type": "Telegram"},
                     "client": {
                         "ipv4": {
                             "ip": "192.0.2.10",
@@ -46,8 +49,8 @@ def make_record(*, record_id: str, login: str, first_seen: str) -> object:
             "sourceType": ["stealer-log"],
             "source": [
                 {
+                    "id": "https://t.me/example/123",
                     "type": "Private channel",
-                    "url": "https://t.me/example/123",
                 }
             ],
             "malware": [{"id": "malware-1", "name": "ExampleStealer"}],
