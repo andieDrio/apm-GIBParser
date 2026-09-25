@@ -36,6 +36,18 @@ Output:
 reports/GIB_DailyReport_YYYY-MM-DD_HHMM.pdf
 ```
 
+## Latest Provider Lookback
+
+The PDF header always represents the exact previous 24-hour execution window. Provider acquisition is intentionally broader so current Group-IB account records are not lost simply because their First Seen/Last Seen timeline is older than 24 hours.
+
+Default:
+
+```bash
+GROUP_IB_LATEST_LOOKBACK_DAYS=30
+```
+
+The value may be reduced for testing, but must not exceed 30 days. The provider collection slice is paginated with `resultId`.
+
 ## Monitoring Window
 
 Each generated report represents the **previous 24 hours ending at the exact time the script runs**, in Philippines Time (Asia/Manila).
