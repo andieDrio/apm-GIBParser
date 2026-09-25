@@ -186,6 +186,23 @@ Window end:    Sep 25, 2026 11:13 AM PHT
 
 For the user's daily-report requirement, the PDF reporting window remains the previous 24 hours through the current run, but provider acquisition uses a separate bounded latest-data lookback. The default is 30 days, retrieved with the documented Group-IB collection endpoint using `df` / `dt` and `resultId` pagination. Records are sorted newest-first by `dateLastSeen` with `dateFirstSeen` fallback. NEW records must visibly include First Seen and Last Seen in PHT. The 24-hour report window must not be used to discard current provider records solely because their First Seen/Last Seen timeline is older. Sequence-based retrieval remains available as the verified incremental/provider-current diagnostic mechanism.
 
+### Provider Lookback Boundary
+
+The PDF reporting window and provider acquisition window are deliberately separate.
+
+```text
+PDF report window:        exact previous 24 hours
+Provider latest lookback: default 30 days
+```
+
+Configure the provider lookback with:
+
+```bash
+GROUP_IB_LATEST_LOOKBACK_DAYS=30
+```
+
+The application must reject values greater than 30 days for this collection retrieval path. Provider results are paginated with `resultId` and sorted newest-first by `dateLastSeen`, with `dateFirstSeen` as fallback.
+
 ## Reporting File Convention
 Reports should be generated automatically as:
 
