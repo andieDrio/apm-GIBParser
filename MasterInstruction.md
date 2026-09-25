@@ -209,8 +209,14 @@ Define and validate the reduced scope, one-command workflow, local history model
 ### PHASE 2 — Group-IB Runtime Contract
 Complete authentication and response-schema verification using the bounded probe.
 
+**Status: COMPLETE.** Runtime verification succeeded with HTTP 200 using the configured Group-IB Personal Token. The observed response contract includes integer `count` and `seqUpdate`, an `items` array, and the documented/observed compromise, event, malware, source, service and timeline structures.
+
 ### PHASE 3 — Daily Retrieval & Normalization
 Implement the verified Group-IB client and canonical daily record model.
+
+**Status: COMPLETE.** The verified client uses Basic authentication and the verified `compromised/account_group/updated` endpoint. Provider responses are validated before normalization. Canonical records use provider record identity when available and a deterministic SHA-256 fallback otherwise. Sensitive password/session fields are excluded from the canonical model.
+
+Pagination/incremental retrieval parameters are deliberately deferred until independently verified.
 
 ### PHASE 4 — Local History & NEW/OLD Classification
 Implement deterministic identity, first/last local observation and repeat-safe classification.
