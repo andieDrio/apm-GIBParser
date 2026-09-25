@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from reportlab.graphics.shapes import Drawing, Line, Rect, RoundRect, String
+from reportlab.graphics.shapes import Drawing, Line, RoundRect, String
 from reportlab.lib import colors
 
 
