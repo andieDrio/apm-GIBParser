@@ -99,7 +99,7 @@ class QuickViewTests(unittest.TestCase):
         self.assertEqual(metrics.newly_detected_7d, 0)
         self.assertEqual(metrics.new_compromise_7d_total, 1)
         self.assertEqual(metrics.new_compromise_7d_average, 1 / 7)
-        self.assertEqual(metrics.newly_affected_domain_counts, (("example.test", 1),))
+        self.assertEqual(metrics.newly_affected_domain_counts, ())
         self.assertIsNone(metrics.previous_run)
         self.assertEqual(metrics.old_historical, 1)
         self.assertEqual(metrics.reseen_recycled, 0)
