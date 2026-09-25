@@ -8,7 +8,7 @@ from typing import Sequence
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import (
@@ -29,23 +29,8 @@ from storage.classifier import NEW, ClassificationResult, OLD, REPEAT, RESEEN
 
 
 def mask_account(value: str | None) -> str:
-    """Mask an account/email without exposing the full identifier."""
-    if not value:
-        return "—"
-    if "@" in value:
-        local, domain = value.split("@", 1)
-        if not local:
-            return f"***@{domain}"
-        if len(local) == 1:
-            masked_local = "*"
-        elif len(local) == 2:
-            masked_local = f"{local[0]}*"
-        else:
-            masked_local = f"{local[0]}{'*' * max(1, len(local) - 2)}{local[-1]}"
-        return f"{masked_local}@{domain}"
-    if len(value) <= 2:
-        return "*" * len(value)
-    return f"{value[0]}{'*' * max(1, len(value) - 2)}{value[-1]}"
+    """Return the original account/email for report correlation."""
+    return value if value else "—"
 
 
 def _text(value: str | None) -> str:
@@ -84,12 +69,12 @@ def _classified_rows(
 
 class _ReportDocument(BaseDocTemplate):
     def __init__(self, filename: str | Path, **kwargs: object) -> None:
-        super().__init__(str(filename), pagesize=A4, **kwargs)
+        super().__init__(str(filename), pagesize=landscape(A4), **kwargs)
         frame = Frame(
             15 * mm,
             15 * mm,
-            A4[0] - 30 * mm,
-            A4[1] - 30 * mm,
+            landscape(A4)[0] - 30 * mm,
+            landscape(A4)[1] - 30 * mm,
             id="normal",
         )
         self.addPageTemplates(
@@ -101,7 +86,7 @@ class _ReportDocument(BaseDocTemplate):
         canvas.saveState()
         canvas.setFont("Helvetica", 7)
         canvas.drawRightString(
-            A4[0] - 15 * mm,
+            landscape(A4)[0] - 15 * mm,
             9 * mm,
             f"Page {doc.page}",
         )
