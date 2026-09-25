@@ -41,6 +41,11 @@ The system produces a PDF; it does not require a browser dashboard.
              └────────┬─────────┘
                       ▼
              ┌──────────────────┐
+             │ Daily Assessment │
+             │ Facts + Evidence │
+             └────────┬─────────┘
+                      ▼
+             ┌──────────────────┐
              │ ReportLab PDF    │
              └────────┬─────────┘
                       ▼
@@ -95,6 +100,21 @@ The Quick View model now exposes:
 - previous-run comparison deltas;
 - newly affected domain counts;
 - durable previous-run metadata.
+
+### Evidence-Based Daily Assessment
+
+`reporting/assessment.py` builds a deterministic assessment from `QuickViewMetrics` and normalized records. It does not call an LLM and does not invent intelligence.
+
+The result contains:
+- activity level (`NO NEW ACTIVITY`, `OBSERVED ACTIVITY`, or `ELEVATED ACTIVITY`);
+- confidence (`LIMITED`, `MODERATE`, or `HIGH`);
+- factual evidence statements;
+- key observations;
+- an assessment paragraph explicitly bounded to observed Group-IB intelligence;
+- recommended analyst-attention items tied to actual findings;
+- a compact numeric evidence basis.
+
+Confidence is limited when no previous successful baseline exists. Evidence completeness is currently represented by source-link coverage. Activity labels are internal deterministic report classifications, not Group-IB severity ratings.
 
 
 ## One-Command Entry Point
@@ -295,7 +315,7 @@ Partial output must not be presented as a successful daily report.
 
 ## Current Phase
 
-**PHASE 6 — One-Command PDF Reporting & Presentation — LATEST-PROVIDER RETRIEVAL GATE**
+**PHASE 7 — End-to-End Validation & Evidence-Based Assessment — ACTIVE**
 
 Phases 1–5 are implemented. Phase 6 now includes one-command PDF generation, professional boxed color bar charts, full account correlation, and provider timestamp conversion to Asia/Manila (PHT). Runtime/presentation validation is the active gate.
 
@@ -326,6 +346,6 @@ Phase 4 implementation provides:
 - repeat-safe transactional upsert behavior.
 
 Next validation gate:
-**PHASE 7 — End-to-End Validation**
+**Phase 7 runtime validation** — execute the unit-test gate and real `python daily_report.py` run, then inspect the generated PDF for deterministic assessment content, baseline-aware confidence and Daily Delta behavior.
 
 The daily report uses the bounded collection endpoint with a default 30-day provider lookback and `resultId` pagination so the current account population is not restricted to the 24-hour report window. The verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` path remains implemented and is used by `tools/groupib_latest_data_probe.py` as an independent latest-update diagnostic before the final Phase 7 end-to-end gate.
