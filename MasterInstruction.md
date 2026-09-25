@@ -172,18 +172,24 @@ Keep this separate from NEW and include:
 - color-coded stealer
 - color-coded source
 
-### Daily Monitoring Window
-The daily report covers the full calendar day in Philippines Time (Asia/Manila):
-- Start Time: **12:00 Midnight**
-- End Time: **11:59 PM**
+### Monitoring Window
+The report covers the **previous 24 hours ending at the exact time the script runs**, in Philippines Time (Asia/Manila).
 
-The verified Group-IB provider contract currently does not establish start/end query parameters, so the implementation must not invent provider-side date filters.
+Example:
+
+```
+Script run:    Sep 25, 2026 11:13 AM PHT
+Window start:  Sep 24, 2026 11:13 AM PHT
+Window end:    Sep 25, 2026 11:13 AM PHT
+```
+
+The verified Group-IB TI&A documentation defines `df` (date from) and `dt` (date to) parameters for the `updated` endpoint and requires the `sequence_list` bootstrap for the incremental retrieval flow. The implementation uses both, then applies an exact local timestamp filter using `dateLastSeen` with `dateFirstSeen` fallback. No unverified provider-side parameter is invented.
 
 ## Reporting File Convention
 Reports should be generated automatically as:
 
 ```
-reports/GIB_DailyReport_YYYY-MM-DD.pdf
+reports/GIB_DailyReport_YYYY-MM-DD_HHMM.pdf
 ```
 
 ## Permanent Development Loop
@@ -224,7 +230,7 @@ Implement the verified Group-IB client and canonical daily record model.
 
 **Status: COMPLETE.** The verified client uses Basic authentication and the verified `compromised/account_group/updated` endpoint. Provider responses are validated before normalization. Canonical records use provider record identity when available and a deterministic SHA-256 fallback otherwise. Sensitive password/session fields are excluded from the canonical model.
 
-Pagination/incremental retrieval parameters are deliberately deferred until independently verified.
+Sequence-based incremental retrieval is verified and implemented. The provider documentation also verifies `df` / `dt` date bounds for the updated endpoint; the implementation uses them together with the sequence cursor and exact local filtering.
 
 ### PHASE 4 — Local History & NEW/OLD Classification
 Implement deterministic identity, first/last local observation and repeat-safe classification.

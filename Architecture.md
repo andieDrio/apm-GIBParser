@@ -47,16 +47,19 @@ The system produces a PDF; it does not require a browser dashboard.
              reports/GroupIB_...
 ```
 
-## Daily Monitoring Window
+## Monitoring Window
 
-The operational reporting window is the full calendar day in Philippines Time (Asia/Manila):
+The operational reporting window is a **rolling 24-hour interval ending at the exact script execution time**, expressed in Philippines Time (Asia/Manila).
+
+Example:
 
 ```text
-Start Time: 12:00 Midnight
-End Time:   11:59 PM
+Script run:    Sep 25, 2026 11:13 AM PHT
+Window start:  Sep 24, 2026 11:13 AM PHT
+Window end:    Sep 25, 2026 11:13 AM PHT
 ```
 
-The provider retrieval starts from the verified `/sequence_list` cursor for the report date, then walks `compromised/account_group/updated?seqUpdate=...` until the latest available sequence. This is required so a first un-cursored page cannot hide newer records.
+The provider retrieval starts from a safe `/sequence_list` calendar-date cursor, then walks `compromised/account_group/updated?seqUpdate=...` with the documented `df` / `dt` bounds. The application also performs an exact local timestamp filter using `dateLastSeen` (falling back to `dateFirstSeen`). This prevents the report from being constrained to midnight-to-midnight calendar dates while retaining the verified sequence-based latest-data retrieval path.
 
 ## One-Command Entry Point
 
@@ -72,7 +75,8 @@ The entry point owns orchestration only. It should not contain HTTP parsing, cla
 Responsibilities:
 - load server/local credentials;
 - authenticate using the verified Group-IB contract;
-- retrieve the required daily collection;
+- retrieve the required rolling 24-hour collection;
+- use documented `df` / `dt` bounds together with the verified `seqUpdate` cursor;
 - handle timeout, HTTP errors and rate limits;
 - return provider payloads without leaking secrets.
 
@@ -273,4 +277,4 @@ Phase 4 implementation provides:
 Next after validation:
 **PHASE 7 — End-to-End Validation**
 
-Sequence-based latest-data retrieval is implemented using the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` contract.
+Rolling-window latest-data retrieval is implemented using the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` contract with documented `df` / `dt` bounds and exact local timestamp filtering.

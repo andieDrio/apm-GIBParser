@@ -1,19 +1,9 @@
-"""Verified Group-IB TI provider client.
-
-Implements only the runtime contract verified by the bounded probe:
-- Basic authentication with the TI web-interface email and Personal API token.
-- GET /compromised/account_group/updated
-- limit parameter
-- sequence cursor from /sequence_list
-- seqUpdate pagination on /compromised/account_group/updated
-- object response with count, seqUpdate and items.
-
-The daily path starts from a verified sequence cursor and walks forward through the updated feed so the first 500 records returned by an un-cursored request cannot hide newer records.
-"""
+"""Verified Group-IB TI provider client."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Mapping
 
 import httpx
@@ -98,14 +88,20 @@ class GroupIBClient:
         *,
         limit: int = 100,
         sequence_date: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
     ) -> GroupIBResponse:
-        """Retrieve the latest updated-account records from a sequence cursor."""
+        """Retrieve updated account records for the requested rolling window."""
         if not 1 <= limit <= 500:
             raise ValueError("Group-IB retrieval limit must be between 1 and 500.")
         if sequence_date is None:
             raise ValueError("sequence_date is required for latest-data retrieval.")
         if len(sequence_date) != 10:
             raise ValueError("sequence_date must use YYYY-MM-DD format.")
+        if (start_time is None) != (end_time is None):
+            raise ValueError("start_time and end_time must be provided together.")
+        if start_time is not None and end_time is not None and end_time <= start_time:
+            raise ValueError("end_time must be after start_time.")
 
         sequence_url = f"{self._base_url}{SEQUENCE_LIST_PATH}"
         try:
@@ -134,11 +130,13 @@ class GroupIBClient:
             page = self._get_updated_page(
                 limit=limit,
                 seq_update=last_sequence_update,
+                start_time=start_time,
+                end_time=end_time,
             )
             all_items.extend(page.items)
             if not page.items or page.count <= 0:
                 break
-            item_sequence = page.items[-1].get("seqUpdate") if page.items else None
+            item_sequence = page.items[-1].get("seqUpdate")
             if not isinstance(item_sequence, int) or isinstance(item_sequence, bool):
                 raise GroupIBSchemaError("Group-IB item is missing a valid seqUpdate.")
             if item_sequence <= last_sequence_update:
@@ -151,13 +149,22 @@ class GroupIBClient:
             items=tuple(all_items),
         )
 
-    def _get_updated_page(self, *, limit: int, seq_update: int) -> GroupIBResponse:
+    def _get_updated_page(
+        self,
+        *,
+        limit: int,
+        seq_update: int,
+        start_time: datetime | None,
+        end_time: datetime | None,
+    ) -> GroupIBResponse:
         url = f"{self._base_url}{COMPROMISED_ACCOUNT_UPDATED_PATH}"
+        params: dict[str, object] = {"limit": limit, "seqUpdate": seq_update}
+        if start_time is not None and end_time is not None:
+            params["df"] = self._format_api_datetime(start_time)
+            params["dt"] = self._format_api_datetime(end_time)
+
         try:
-            response = self._client.get(
-                url,
-                params={"limit": limit, "seqUpdate": seq_update},
-            )
+            response = self._client.get(url, params=params)
         except httpx.TimeoutException as exc:
             raise GroupIBRequestError("Group-IB request timed out.") from exc
         except httpx.HTTPError as exc:
@@ -169,6 +176,16 @@ class GroupIBClient:
         except ValueError as exc:
             raise GroupIBSchemaError("Group-IB returned invalid JSON.") from exc
         return self._parse_response(payload)
+
+    @staticmethod
+    def _format_api_datetime(value: datetime) -> str:
+        if value.tzinfo is None:
+            raise ValueError("Group-IB date bounds must be timezone-aware.")
+        return (
+            value.astimezone(timezone.utc)
+            .replace(microsecond=0)
+            .strftime("%Y-%m-%dT%H:%M:%SZ")
+        )
 
     @staticmethod
     def _raise_for_status(response: httpx.Response) -> None:

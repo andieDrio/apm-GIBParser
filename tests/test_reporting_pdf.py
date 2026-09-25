@@ -8,7 +8,12 @@ import unittest
 from pathlib import Path
 
 from groupib.normalizer import normalize_record
-from reporting.pdf import format_ph_time, generate_daily_report, mask_account
+from reporting.pdf import (
+    format_ph_datetime,
+    format_ph_time,
+    generate_daily_report,
+    mask_account,
+)
 from reporting.summary import build_quick_view
 from storage.classifier import classify_record
 from storage.history import HistoryStore
@@ -36,6 +41,16 @@ class PdfReportTests(unittest.TestCase):
     def test_account_identifier_is_reportable_in_full(self) -> None:
         masked = mask_account("alice@example.test")
         self.assertEqual(masked, "alice@example.test")
+
+    def test_report_window_is_formatted_in_philippines_time(self) -> None:
+        self.assertEqual(
+            format_ph_datetime(datetime(2026, 9, 24, 3, 13, tzinfo=timezone.utc)),
+            "Sep 24, 2026 11:13 AM",
+        )
+        self.assertEqual(
+            format_ph_datetime(datetime(2026, 9, 25, 3, 13, tzinfo=timezone.utc)),
+            "Sep 25, 2026 11:13 AM",
+        )
 
     def test_provider_timestamp_is_converted_to_philippines_time(self) -> None:
         self.assertEqual(
@@ -75,10 +90,12 @@ class PdfReportTests(unittest.TestCase):
                 classifications,
                 records,
             )
-            output = root / "reports" / "GroupIB_Daily_Report_2026-09-25.pdf"
+            output = root / "reports" / "GIB_DailyReport_2026-09-25_1000.pdf"
             generated = generate_daily_report(
                 output,
                 report_date="2026-09-25",
+                window_start=datetime(2026, 9, 24, 10, 0, tzinfo=timezone.utc),
+                window_end=datetime(2026, 9, 25, 10, 0, tzinfo=timezone.utc),
                 metrics=metrics,
                 classifications=classifications,
                 records=records,

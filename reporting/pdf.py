@@ -65,6 +65,13 @@ def _join(values: Sequence[str]) -> str:
     return ", ".join(values) if values else "—"
 
 
+def format_ph_datetime(value: datetime) -> str:
+    """Format a timezone-aware timestamp in Philippines Time."""
+    if value.tzinfo is None:
+        raise ValueError("Timestamp must be timezone-aware.")
+    return value.astimezone(PHILIPPINES_TZ).strftime("%b %d, %Y %I:%M %p")
+
+
 def format_ph_time(value: str | None) -> str:
     """Convert a provider timestamp to readable Philippines time (UTC+8)."""
     if not value:
@@ -294,6 +301,8 @@ def generate_daily_report(
     output_path: str | Path,
     *,
     report_date: str,
+    window_start: datetime,
+    window_end: datetime,
     metrics: QuickViewMetrics,
     classifications: Sequence[ClassificationResult],
     records: Sequence[CanonicalGroupIBRecord],
@@ -301,6 +310,10 @@ def generate_daily_report(
     """Generate one complete daily PDF from already-classified canonical records."""
     if len(classifications) != len(records):
         raise ValueError("classifications and records must have equal lengths.")
+    if window_start.tzinfo is None or window_end.tzinfo is None:
+        raise ValueError("Report window timestamps must be timezone-aware.")
+    if window_end <= window_start:
+        raise ValueError("Report window end must be after start.")
 
     destination = Path(output_path)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -318,8 +331,8 @@ def generate_daily_report(
         Paragraph("Group-IB Daily Threat Intelligence Report", title),
         Paragraph(
             f"Report Date: {escape(report_date)} &nbsp;•&nbsp; "
-            "Start Time: 12:00 Midnight &nbsp;•&nbsp; "
-            "End Time: 11:59 PM &nbsp;•&nbsp; "
+            f"Window Start: {escape(format_ph_datetime(window_start))} &nbsp;•&nbsp; "
+            f"Window End: {escape(format_ph_datetime(window_end))} &nbsp;•&nbsp; "
             "Time Zone: Asia/Manila (PHT)",
             subtitle,
         ),

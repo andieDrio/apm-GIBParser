@@ -33,16 +33,22 @@ PDF
 Output:
 
 ```
-reports/GIB_DailyReport_YYYY-MM-DD.pdf
+reports/GIB_DailyReport_YYYY-MM-DD_HHMM.pdf
 ```
 
-## Daily Monitoring Window
+## Monitoring Window
 
-Each generated report represents the full calendar day in Philippines Time (Asia/Manila):
-- Start Time: **12:00 Midnight**
-- End Time: **11:59 PM**
+Each generated report represents the **previous 24 hours ending at the exact time the script runs**, in Philippines Time (Asia/Manila).
 
-The provider retrieval now starts from the verified Group-IB `/sequence_list` cursor for the report date, then paginates `compromised/account_group/updated` forward to the newest available sequence. This avoids relying on the first un-cursored 500 records, which can represent older data.
+Example:
+
+```
+Script run:    Sep 25, 2026 11:13 AM PHT
+Window start:  Sep 24, 2026 11:13 AM PHT
+Window end:    Sep 25, 2026 11:13 AM PHT
+```
+
+The provider retrieval starts from a verified `/sequence_list` cursor with a safe date overlap, then paginates `compromised/account_group/updated` using the documented `df` / `dt` bounds and `seqUpdate` cursor. The application then applies an exact local timestamp filter using Group-IB `dateLastSeen` (falling back to `dateFirstSeen`) so the report window is not tied to calendar midnight.
 
 ## What the Daily Report Shows
 
@@ -157,4 +163,4 @@ Phases 1–5 are implemented and the daily runtime now generates the PDF. The cu
 
 After PDF presentation/runtime validation, the next gate is **PHASE 7 — End-to-End Validation**.
 
-Sequence-based latest-data retrieval is implemented using the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` flow.
+Rolling-window latest-data retrieval is implemented using the verified `/sequence_list` → `/compromised/account_group/updated?seqUpdate=...` flow with documented `df` / `dt` bounds and an exact local 24-hour timestamp filter.
