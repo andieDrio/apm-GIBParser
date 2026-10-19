@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Sequence
 from xml.sax.saxutils import escape
@@ -843,7 +843,7 @@ def generate_daily_report(
     # into one table for each of the seven PHT calendar dates.
     report_end_date = window_end.astimezone(PHILIPPINES_TZ).date()
     first_report_date = report_end_date - timedelta(days=6)
-    daily_new_records: dict[object, list[CanonicalGroupIBRecord]] = {
+    daily_new_records: dict[date, list[CanonicalGroupIBRecord]] = {
         first_report_date + timedelta(days=offset): []
         for offset in range(7)
     }
