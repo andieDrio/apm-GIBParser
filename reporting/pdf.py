@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Sequence
 from xml.sax.saxutils import escape
@@ -203,6 +203,28 @@ def _classified_rows(
         for result, record in zip(classifications, records)
         if result.classification in wanted
     ]
+
+def _record_timeline_date(record: CanonicalGroupIBRecord):
+    """Return the record's primary compromise/detection date in Philippines Time."""
+    for value in (
+        record.date_first_compromised,
+        record.date_last_compromised,
+        record.date_detected,
+        record.date_first_seen,
+    ):
+        if not value:
+            continue
+        normalized = value.strip()
+        if not normalized:
+            continue
+        try:
+            parsed = datetime.fromisoformat(normalized.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(PHILIPPINES_TZ).date()
+    return None
 
 
 class _ReportDocument(BaseDocTemplate):
@@ -817,11 +839,55 @@ def generate_daily_report(
         Spacer(1, 6),
     ]
 
-    if new_records:
-        quick_view_story.extend(_accounts_table(new_records, include_actor=True))
-    else:
-        quick_view_story.append(
-            Paragraph("No NEW compromises were classified for this run.", note)
+    # Keep the existing account table fields unchanged, but split NEW records
+    # into one table for each of the seven PHT calendar dates.
+    report_end_date = window_end.astimezone(PHILIPPINES_TZ).date()
+    first_report_date = report_end_date - timedelta(days=6)
+    daily_new_records: dict[object, list[CanonicalGroupIBRecord]] = {
+        first_report_date + timedelta(days=offset): []
+        for offset in range(7)
+    }
+    unassigned_new_records: list[CanonicalGroupIBRecord] = []
+    for record in new_records:
+        timeline_date = _record_timeline_date(record)
+        if timeline_date in daily_new_records:
+            daily_new_records[timeline_date].append(record)
+        else:
+            # Preserve any NEW record whose provider timeline is missing or
+            # falls outside the displayed seven-day range instead of dropping it.
+            unassigned_new_records.append(record)
+
+    for day in daily_new_records:
+        day_records = daily_new_records[day]
+        quick_view_story.extend(
+            [
+                _section_banner(
+                    f"NEW COMPROMISED ACCOUNTS — {day.isoformat()} ({len(day_records)})",
+                    background="#F0F9FF",
+                    border="#BAE6FD",
+                ),
+                Spacer(1, 4),
+            ]
+        )
+        if day_records:
+            quick_view_story.extend(_accounts_table(day_records, include_actor=True))
+        else:
+            quick_view_story.append(Paragraph("No NEW compromises for this date.", note))
+            quick_view_story.append(Spacer(1, 6))
+
+    if unassigned_new_records:
+        quick_view_story.extend(
+            [
+                _section_banner(
+                    f"NEW COMPROMISED ACCOUNTS — DATE UNAVAILABLE / OUTSIDE LAST 7 DAYS ({len(unassigned_new_records)})",
+                    background="#FFF7ED",
+                    border="#FDBA74",
+                ),
+                Spacer(1, 4),
+            ]
+        )
+        quick_view_story.extend(
+            _accounts_table(unassigned_new_records, include_actor=True)
         )
 
     quick_view_story.extend(
