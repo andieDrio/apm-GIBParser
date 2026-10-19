@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Iterable
 
 from groupib.normalizer import CanonicalGroupIBRecord
-from storage.classifier import NEW, OLD, REPEAT, RESEEN, ClassificationResult
+from storage.classifier import NEW, OLD, REPEAT, RESEEN, UNVERIFIED, ClassificationResult
 from storage.history import DailyRunSummary
 
 
@@ -23,6 +23,7 @@ class QuickViewMetrics:
     new_compromise_7d_daily_counts: tuple[tuple[str, int], ...]
     newly_detected_7d: int
     old_historical: int
+    unverified_records: int
     reseen_recycled: int
     repeat_records: int
     infostealer_records: int
@@ -94,6 +95,7 @@ def build_quick_view(
     reseen_count = sum(item.classification == RESEEN for item in classifications)
     repeat_count = sum(item.classification == REPEAT for item in classifications)
     historical_count = old_count + reseen_count + repeat_count
+    unverified_count = sum(item.classification == UNVERIFIED for item in classifications)
 
     if report_end is None:
         report_end = datetime.fromisoformat(report_date).replace(
@@ -162,6 +164,7 @@ def build_quick_view(
         new_compromise_7d_daily_counts=new_compromise_7d_daily_counts,
         newly_detected_7d=newly_detected_7d,
         old_historical=historical_count,
+        unverified_records=unverified_count,
         reseen_recycled=reseen_count,
         repeat_records=repeat_count,
         infostealer_records=sum(bool(record.stealer_families) for record in records),
