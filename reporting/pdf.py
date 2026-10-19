@@ -336,6 +336,7 @@ def _accounts_table(
         leading=5.8,
         textColor=colors.HexColor("#2563EB"),
         splitLongWords=True,
+        wordWrap="CJK",
     )
 
     def value(text: str, *, password: bool = False) -> Paragraph:
@@ -359,9 +360,13 @@ def _accounts_table(
         "Threat Actor",
         "Source Link",
     ]
-    # Keep the full table inside the 15 mm A4-landscape frame (735 pt).
+    # Use the same measured width as the landscape A4 content frame:
+    # page width minus 30 mm margins. The sum must not exceed the frame.
     # Source Type stays omitted; Source Link is a dedicated final column.
-    widths = [55, 55, 55, 66, 78, 62, 50, 56, 56, 56, 56, 90]
+    available_width = landscape(A4)[0] - 30 * mm
+    base_widths = [55, 55, 55, 66, 78, 62, 50, 56, 56, 56, 56, 90]
+    width_scale = available_width / sum(base_widths)
+    widths = [width * width_scale for width in base_widths]
 
     rows: list[list[object]] = [[
         Paragraph(escape(header), header_style) for header in headers
@@ -431,7 +436,11 @@ def _section_banner(title: str, *, background: str, border: str) -> Table:
         leading=14,
         textColor=colors.HexColor("#172554"),
     )
-    table = Table([[Paragraph(escape(title), style)]], colWidths=[735])
+    table = Table(
+        [[Paragraph(escape(title), style)]],
+        colWidths=[landscape(A4)[0] - 30 * mm],
+        hAlign="LEFT",
+    )
     table.setStyle(
         TableStyle(
             [
