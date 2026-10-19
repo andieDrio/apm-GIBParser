@@ -163,6 +163,13 @@ class HistoryClassificationTests(unittest.TestCase):
 
                 self.assertEqual(result.classification, UNVERIFIED)
                 self.assertIn("no valid provider", result.reason)
+                repeated = classify_record(
+                    store,
+                    make_record(first_seen=None, last_seen=None),
+                    observed_at=OBSERVED_AT,
+                    newness_window_days=7,
+                )
+                self.assertEqual(repeated.classification, UNVERIFIED)
 
 
 if __name__ == "__main__":
