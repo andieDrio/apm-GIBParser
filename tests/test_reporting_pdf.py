@@ -10,6 +10,7 @@ from pathlib import Path
 from groupib.normalizer import normalize_record
 from reporting.assessment import build_assessment
 from reporting.pdf import (
+    _record_timeline_date,
     format_ph_datetime,
     format_ph_time,
     generate_daily_report,
@@ -81,6 +82,18 @@ class PdfReportTests(unittest.TestCase):
         self.assertEqual(
             format_ph_time("2026-09-25T01:00:00Z"),
             "Sep 25, 2026 09:00 AM",
+        )
+
+    def test_daily_table_timeline_date_uses_philippines_calendar_date(self) -> None:
+        record = make_record(
+            record_id="pht-date",
+            login="pht@example.test",
+            first_seen="2026-09-25T18:30:00Z",
+        )
+
+        self.assertEqual(
+            _record_timeline_date(record).isoformat(),
+            "2026-09-26",
         )
 
     def test_generates_dated_pdf_with_operational_credentials(self) -> None:
