@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 from groupib.normalizer import normalize_record
-from storage.classifier import NEW, OLD, REPEAT, RESEEN, classify_record
+from storage.classifier import NEW, OLD, REPEAT, RESEEN, UNVERIFIED, classify_record
 from storage.history import HistoryStore
 
 
@@ -150,6 +150,19 @@ class HistoryClassificationTests(unittest.TestCase):
                 )
 
                 self.assertEqual(result.classification, OLD)
+
+    def test_missing_timeline_is_unverified_not_new(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with HistoryStore(Path(directory) / "history.db") as store:
+                result = classify_record(
+                    store,
+                    make_record(first_seen=None, last_seen=None),
+                    observed_at=OBSERVED_AT,
+                    newness_window_days=7,
+                )
+
+                self.assertEqual(result.classification, UNVERIFIED)
+                self.assertIn("no valid provider", result.reason)
 
 
 if __name__ == "__main__":
