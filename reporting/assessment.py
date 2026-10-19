@@ -68,9 +68,14 @@ def build_assessment(
         else "No previous successful baseline is available for domain-change comparison.",
         f"{metrics.newly_detected_7d} record(s) have a Group-IB detection date within the seven-day window.",
         f"{metrics.new_compromise_7d_total} NEW compromise record(s) fall within the seven-day compromise timeline.",
+        f"{metrics.unverified_records} record(s) require review because no valid timeline or prior identity match was available.",
     )
 
     observations: list[str] = []
+    if metrics.unverified_records:
+        observations.append(
+            f"{metrics.unverified_records} record(s) are UNVERIFIED due to insufficient timeline/history evidence."
+        )
     if domain_count:
         observations.append(
             f"{domain_count} affected domain(s) are represented in the retrieved dataset."
@@ -128,6 +133,8 @@ def build_assessment(
         attention.append("Review newly classified credentials and preserve relevant source evidence.")
     if metrics.newly_detected_7d:
         attention.append("Review recent Group-IB detections for recurrence or clustering.")
+    if metrics.unverified_records:
+        attention.append("Manually validate UNVERIFIED records before treating them as new compromises.")
     if source_link_count < metrics.total_records:
         attention.append("Review records without source links before evidence collection.")
     attention.append("Monitor the next successful daily run for recurrence and change.")
@@ -136,6 +143,7 @@ def build_assessment(
 
     basis = (
         ("NEW compromises", str(metrics.new_compromises)),
+        ("UNVERIFIED records", str(metrics.unverified_records)),
         ("New affected domains", str(new_domain_count)),
         ("Detected in 7d", str(metrics.newly_detected_7d)),
         ("7d NEW total", str(metrics.new_compromise_7d_total)),
