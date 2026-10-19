@@ -96,6 +96,24 @@ class PdfReportTests(unittest.TestCase):
             "2026-09-26",
         )
 
+    def test_daily_table_prefers_detection_date_over_old_compromise_date(self) -> None:
+        record = normalize_record(
+            {
+                "id": "recent-detection",
+                "login": "recent@example.test",
+                "dateFirstCompromised": "2026-09-10T00:00:00Z",
+                "dateDetected": "2026-09-25T18:30:00Z",
+                "dateFirstSeen": "2026-09-10T00:00:00Z",
+                "dateLastSeen": "2026-09-25T18:30:00Z",
+                "events": [],
+            }
+        )
+
+        self.assertEqual(
+            _record_timeline_date(record).isoformat(),
+            "2026-09-26",
+        )
+
     def test_generates_dated_pdf_with_operational_credentials(self) -> None:
         records = (
             make_record(
