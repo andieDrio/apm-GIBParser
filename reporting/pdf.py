@@ -832,54 +832,109 @@ def generate_daily_report(
         ),
         Spacer(1, 8),
         _section_banner(
-            f"NEW COMPROMISED ACCOUNTS — LAST 7 DAYS ({len(new_records)})",
+            f"COMPROMISED ACCOUNTS — LAST 7 DAYS (NEW + OLD / HISTORICAL: "
+            f"{len(new_records) + len(historical_records)})",
             background="#E0F2FE",
             border="#7DD3FC",
         ),
         Spacer(1, 6),
     ]
 
-    # Keep the existing account table fields unchanged, but split NEW records
-    # into one table for each of the seven PHT calendar dates.
+    # Group all classifications by the same seven PHT calendar dates.
+    # The existing account-table columns and rendering stay unchanged.
     report_end_date = window_end.astimezone(PHILIPPINES_TZ).date()
     first_report_date = report_end_date - timedelta(days=6)
-    daily_new_records: dict[date, list[CanonicalGroupIBRecord]] = {
-        first_report_date + timedelta(days=offset): []
+    daily_records: dict[date, dict[str, list[CanonicalGroupIBRecord]]] = {
+        first_report_date + timedelta(days=offset): {
+            NEW: [],
+            "OLD / HISTORICAL": [],
+        }
         for offset in range(7)
     }
-    unassigned_new_records: list[CanonicalGroupIBRecord] = []
-    for record in new_records:
-        timeline_date = _record_timeline_date(record)
-        if timeline_date in daily_new_records:
-            daily_new_records[timeline_date].append(record)
-        else:
-            # Preserve any NEW record whose provider timeline is missing or
-            # falls outside the displayed seven-day range instead of dropping it.
-            unassigned_new_records.append(record)
+    unassigned_records: dict[str, list[CanonicalGroupIBRecord]] = {
+        NEW: [],
+        "OLD / HISTORICAL": [],
+    }
 
-    for day in daily_new_records:
-        day_records = daily_new_records[day]
+    for result, record in zip(classifications, records):
+        timeline_date = _record_timeline_date(record)
+        category = (
+            NEW
+            if result.classification == NEW
+            else "OLD / HISTORICAL"
+            if result.classification in {OLD, RESEEN, REPEAT}
+            else None
+        )
+        if category is None:
+            continue
+        if timeline_date in daily_records:
+            daily_records[timeline_date][category].append(record)
+        else:
+            # Keep records without a usable date or outside the seven-day window.
+            unassigned_records[category].append(record)
+
+    for day, categories in daily_records.items():
+        day_total = len(categories[NEW]) + len(categories["OLD / HISTORICAL"])
         quick_view_story.extend(
             [
                 _section_banner(
-                    f"NEW COMPROMISED ACCOUNTS — {day.isoformat()} ({len(day_records)})",
+                    f"COMPROMISED ACCOUNTS — {day.isoformat()} ({day_total})",
                     background="#F0F9FF",
                     border="#BAE6FD",
                 ),
                 Spacer(1, 4),
             ]
         )
-        if day_records:
-            quick_view_story.extend(_accounts_table(day_records, include_actor=True))
+
+        quick_view_story.append(
+            _section_banner(
+                f"NEW COMPROMISED ACCOUNTS ({len(categories[NEW])})",
+                background="#E0F2FE",
+                border="#7DD3FC",
+            )
+        )
+        quick_view_story.append(Spacer(1, 3))
+        if categories[NEW]:
+            quick_view_story.extend(
+                _accounts_table(categories[NEW], include_actor=True)
+            )
         else:
             quick_view_story.append(Paragraph("No NEW compromises for this date.", note))
-            quick_view_story.append(Spacer(1, 6))
+            quick_view_story.append(Spacer(1, 5))
 
-    if unassigned_new_records:
+        quick_view_story.append(
+            _section_banner(
+                f"OLD / HISTORICAL COMPROMISED ACCOUNTS "
+                f"({len(categories['OLD / HISTORICAL'])})",
+                background="#F1F5F9",
+                border="#CBD5E1",
+            )
+        )
+        quick_view_story.append(Spacer(1, 3))
+        if categories["OLD / HISTORICAL"]:
+            quick_view_story.extend(
+                _accounts_table(
+                    categories["OLD / HISTORICAL"],
+                    include_actor=False,
+                )
+            )
+        else:
+            quick_view_story.append(
+                Paragraph("No OLD / HISTORICAL records for this date.", note)
+            )
+            quick_view_story.append(Spacer(1, 5))
+
+    for category, title in (
+        (NEW, "NEW COMPROMISED ACCOUNTS"),
+        ("OLD / HISTORICAL", "OLD / HISTORICAL COMPROMISED ACCOUNTS"),
+    ):
+        pending = unassigned_records[category]
+        if not pending:
+            continue
         quick_view_story.extend(
             [
                 _section_banner(
-                    f"NEW COMPROMISED ACCOUNTS — DATE UNAVAILABLE / OUTSIDE LAST 7 DAYS ({len(unassigned_new_records)})",
+                    f"{title} — DATE UNAVAILABLE / OUTSIDE LAST 7 DAYS ({len(pending)})",
                     background="#FFF7ED",
                     border="#FDBA74",
                 ),
@@ -887,26 +942,10 @@ def generate_daily_report(
             ]
         )
         quick_view_story.extend(
-            _accounts_table(unassigned_new_records, include_actor=True)
-        )
-
-    quick_view_story.extend(
-        [
-            Spacer(1, 12),
-            _section_banner(
-                f"Compromised Accounts — OLD / HISTORICAL ({len(historical_records)})",
-                background="#F1F5F9",
-                border="#CBD5E1",
-            ),
-            Spacer(1, 6),
-        ]
-    )
-
-    if historical_records:
-        quick_view_story.extend(_accounts_table(historical_records, include_actor=False))
-    else:
-        quick_view_story.append(
-            Paragraph("No OLD / HISTORICAL records were returned.", note)
+            _accounts_table(
+                pending,
+                include_actor=(category == NEW),
+            )
         )
 
     quick_view_story.extend(
