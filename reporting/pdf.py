@@ -866,7 +866,9 @@ def generate_daily_report(
             # Keep records without a usable date or outside the seven-day window.
             unassigned_records[category].append(record)
 
-    for day, categories in daily_records.items():
+    # Render newest dates first.
+    for day in reversed(daily_records):
+        categories = daily_records[day]
         day_new = categories[NEW]
         day_historical = categories["OLD / HISTORICAL"]
         day_total = len(day_new) + len(day_historical)
@@ -918,7 +920,11 @@ def generate_daily_report(
         (NEW, "NEW COMPROMISED ACCOUNTS"),
         ("OLD / HISTORICAL", "OLD / HISTORICAL COMPROMISED ACCOUNTS"),
     ):
-        pending = unassigned_records[category]
+        pending = sorted(
+            unassigned_records[category],
+            key=lambda record: _record_timeline_date(record) or date.min,
+            reverse=True,
+        )
         if not pending:
             continue
         quick_view_story.extend(
