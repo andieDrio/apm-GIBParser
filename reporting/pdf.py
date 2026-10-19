@@ -831,13 +831,6 @@ def generate_daily_report(
             note,
         ),
         Spacer(1, 8),
-        _section_banner(
-            f"COMPROMISED ACCOUNTS — LAST 7 DAYS (NEW + OLD / HISTORICAL: "
-            f"{len(new_records) + len(historical_records)})",
-            background="#E0F2FE",
-            border="#7DD3FC",
-        ),
-        Spacer(1, 6),
     ]
 
     # Group all classifications by the same seven PHT calendar dates.
@@ -874,7 +867,14 @@ def generate_daily_report(
             unassigned_records[category].append(record)
 
     for day, categories in daily_records.items():
-        day_total = len(categories[NEW]) + len(categories["OLD / HISTORICAL"])
+        day_new = categories[NEW]
+        day_historical = categories["OLD / HISTORICAL"]
+        day_total = len(day_new) + len(day_historical)
+
+        # Omit dates with no records so the report contains only actionable tables.
+        if not day_total:
+            continue
+
         quick_view_story.extend(
             [
                 _section_banner(
@@ -886,43 +886,33 @@ def generate_daily_report(
             ]
         )
 
-        quick_view_story.append(
-            _section_banner(
-                f"NEW COMPROMISED ACCOUNTS ({len(categories[NEW])})",
-                background="#E0F2FE",
-                border="#7DD3FC",
-            )
-        )
-        quick_view_story.append(Spacer(1, 3))
-        if categories[NEW]:
+        if day_new:
             quick_view_story.extend(
-                _accounts_table(categories[NEW], include_actor=True)
+                [
+                    _section_banner(
+                        f"NEW COMPROMISED ACCOUNTS ({len(day_new)})",
+                        background="#E0F2FE",
+                        border="#7DD3FC",
+                    ),
+                    Spacer(1, 3),
+                ]
             )
-        else:
-            quick_view_story.append(Paragraph("No NEW compromises for this date.", note))
-            quick_view_story.append(Spacer(1, 5))
+            quick_view_story.extend(_accounts_table(day_new, include_actor=True))
 
-        quick_view_story.append(
-            _section_banner(
-                f"OLD / HISTORICAL COMPROMISED ACCOUNTS "
-                f"({len(categories['OLD / HISTORICAL'])})",
-                background="#F1F5F9",
-                border="#CBD5E1",
-            )
-        )
-        quick_view_story.append(Spacer(1, 3))
-        if categories["OLD / HISTORICAL"]:
+        if day_historical:
             quick_view_story.extend(
-                _accounts_table(
-                    categories["OLD / HISTORICAL"],
-                    include_actor=False,
-                )
+                [
+                    _section_banner(
+                        f"OLD / HISTORICAL COMPROMISED ACCOUNTS ({len(day_historical)})",
+                        background="#F1F5F9",
+                        border="#CBD5E1",
+                    ),
+                    Spacer(1, 3),
+                ]
             )
-        else:
-            quick_view_story.append(
-                Paragraph("No OLD / HISTORICAL records for this date.", note)
+            quick_view_story.extend(
+                _accounts_table(day_historical, include_actor=False)
             )
-            quick_view_story.append(Spacer(1, 5))
 
     for category, title in (
         (NEW, "NEW COMPROMISED ACCOUNTS"),
