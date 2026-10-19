@@ -62,28 +62,34 @@ def classify_record(
 
     now = (observed_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
     existing = store.get(record.compromise_identity)
+    provider_newness_time = next(
+        (
+            parsed
+            for value in (
+                record.date_first_compromised,
+                record.date_last_compromised,
+                record.date_detected,
+                record.date_first_seen,
+            )
+            if (parsed := _parse_timestamp(value)) is not None
+        ),
+        None,
+    )
 
     if existing is not None:
-        if existing.last_observation_fingerprint == record.observation_fingerprint:
+        if existing.last_classification == UNVERIFIED and provider_newness_time is None:
+            classification = UNVERIFIED
+            reason = (
+                "Identity was previously observed but still has no valid provider "
+                "timeline; manual review remains required."
+            )
+        elif existing.last_observation_fingerprint == record.observation_fingerprint:
             classification = REPEAT
             reason = "Durable identity exists and observation fingerprint is unchanged."
         else:
             classification = RESEEN
             reason = "Durable identity exists but the provider observation changed."
     else:
-        provider_newness_time = next(
-            (
-                parsed
-                for value in (
-                    record.date_first_compromised,
-                    record.date_last_compromised,
-                    record.date_detected,
-                    record.date_first_seen,
-                )
-                if (parsed := _parse_timestamp(value)) is not None
-            ),
-            None,
-        )
         cutoff = now - timedelta(days=newness_window_days)
         if provider_newness_time is None:
             classification = UNVERIFIED
