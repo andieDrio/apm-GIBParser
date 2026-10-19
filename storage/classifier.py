@@ -13,6 +13,7 @@ NEW = "NEW"
 OLD = "OLD/HISTORICAL"
 RESEEN = "RESEEN/RECYCLED"
 REPEAT = "REPEAT"
+UNVERIFIED = "UNVERIFIED"
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,16 +48,14 @@ def classify_record(
 ) -> ClassificationResult:
     """Classify one record before atomically updating local history.
 
-    NEW requires both:
-    - no durable local identity match; and
-    - the provider compromise/detection timeline is absent or falls within the configured window.
+    NEW requires no durable identity match and a valid provider timeline within
+    the configured newness window. An older valid timeline is OLD/HISTORICAL.
+    If no valid timeline exists and the identity is unknown, the record is
+    UNVERIFIED rather than being incorrectly promoted to NEW.
 
     Timeline precedence is Compromised Date, Last Compromised, Date Detected,
-    then First Seen. This makes NEW represent recent compromise intelligence while
-    still tolerating providers that omit individual timestamps.
-
-    A known identity is never NEW. An unchanged known fingerprint is REPEAT;
-    a changed observation of a known identity is RESEEN/RECYCLED.
+    then First Seen. A known identity is never NEW: unchanged observations are
+    REPEAT and changed observations are RESEEN/RECYCLED.
     """
     if newness_window_days < 0:
         raise ValueError("newness_window_days cannot be negative.")
@@ -72,18 +71,27 @@ def classify_record(
             classification = RESEEN
             reason = "Durable identity exists but the provider observation changed."
     else:
-        provider_timeline = (
-            record.date_first_compromised
-            or record.date_last_compromised
-            or record.date_detected
-            or record.date_first_seen
+        provider_newness_time = next(
+            (
+                parsed
+                for value in (
+                    record.date_first_compromised,
+                    record.date_last_compromised,
+                    record.date_detected,
+                    record.date_first_seen,
+                )
+                if (parsed := _parse_timestamp(value)) is not None
+            ),
+            None,
         )
-        provider_newness_time = _parse_timestamp(provider_timeline)
         cutoff = now - timedelta(days=newness_window_days)
-        if (
-            provider_newness_time is not None
-            and provider_newness_time < cutoff
-        ):
+        if provider_newness_time is None:
+            classification = UNVERIFIED
+            reason = (
+                "No durable identity exists and no valid provider compromise/"
+                "detection/first-seen timestamp is available."
+            )
+        elif provider_newness_time < cutoff:
             classification = OLD
             reason = (
                 "No durable identity exists, but the provider compromise/detection "
@@ -92,8 +100,8 @@ def classify_record(
         else:
             classification = NEW
             reason = (
-                "No durable identity exists and the provider compromise/detection "
-                "timeline is within the configured newness policy."
+                "No durable identity exists and a valid provider compromise/"
+                "detection timeline is within the configured newness policy."
             )
 
     history = store.record_observation(
