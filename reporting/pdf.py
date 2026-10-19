@@ -206,11 +206,14 @@ def _classified_rows(
 
 def _record_timeline_date(record: CanonicalGroupIBRecord):
     """Return the record's primary compromise/detection date in Philippines Time."""
+    # Group daily tables by the provider's detection/observation date first.
+    # Compromise date may describe an older leak and must not hide a recent detection.
     for value in (
+        record.date_detected,
+        record.date_last_seen,
+        record.date_first_seen,
         record.date_first_compromised,
         record.date_last_compromised,
-        record.date_detected,
-        record.date_first_seen,
     ):
         if not value:
             continue
