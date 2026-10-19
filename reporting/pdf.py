@@ -420,7 +420,7 @@ def _accounts_table(
             ]
         )
     )
-    return [table, Spacer(1, 10)]
+    return [table, Spacer(1, 4)]
 
 
 def _section_banner(title: str, *, background: str, border: str) -> Table:
@@ -885,26 +885,16 @@ def generate_daily_report(
         if not day_total:
             continue
 
-        quick_view_story.extend(
-            [
-                _section_banner(
-                    f"COMPROMISED ACCOUNTS — {day.isoformat()} ({day_total})",
-                    background="#F0F9FF",
-                    border="#BAE6FD",
-                ),
-                Spacer(1, 4),
-            ]
-        )
-
+        # Include the date in each category heading to avoid orphan date banners.
         if day_new:
             quick_view_story.extend(
                 [
                     _section_banner(
-                        f"NEW COMPROMISED ACCOUNTS ({len(day_new)})",
+                        f"NEW COMPROMISED ACCOUNTS — {day.isoformat()} ({len(day_new)})",
                         background="#E0F2FE",
                         border="#7DD3FC",
                     ),
-                    Spacer(1, 3),
+                    Spacer(1, 2),
                 ]
             )
             quick_view_story.extend(_accounts_table(day_new, include_actor=True))
@@ -913,11 +903,11 @@ def generate_daily_report(
             quick_view_story.extend(
                 [
                     _section_banner(
-                        f"OLD / HISTORICAL COMPROMISED ACCOUNTS ({len(day_historical)})",
+                        f"OLD / HISTORICAL COMPROMISED ACCOUNTS — {day.isoformat()} ({len(day_historical)})",
                         background="#F1F5F9",
                         border="#CBD5E1",
                     ),
-                    Spacer(1, 3),
+                    Spacer(1, 2),
                 ]
             )
             quick_view_story.extend(
@@ -928,11 +918,11 @@ def generate_daily_report(
             quick_view_story.extend(
                 [
                     _section_banner(
-                        f"UNVERIFIED — NEEDS REVIEW ({len(day_unverified)})",
+                        f"UNVERIFIED — NEEDS REVIEW — {day.isoformat()} ({len(day_unverified)})",
                         background="#FEF3C7",
                         border="#FCD34D",
                     ),
-                    Spacer(1, 3),
+                    Spacer(1, 2),
                 ]
             )
             quick_view_story.extend(
