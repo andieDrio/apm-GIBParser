@@ -32,7 +32,7 @@ from reporting.charts import (
     seven_day_trend_panel,
 )
 from reporting.summary import QuickViewMetrics
-from storage.classifier import ClassificationResult, NEW, OLD, REPEAT, RESEEN
+from storage.classifier import ClassificationResult, NEW, OLD, REPEAT, RESEEN, UNVERIFIED
 
 PHILIPPINES_TZ = ZoneInfo("Asia/Manila")
 CHIP_COLORS = (
@@ -841,12 +841,14 @@ def generate_daily_report(
         first_report_date + timedelta(days=offset): {
             NEW: [],
             "OLD / HISTORICAL": [],
+            UNVERIFIED: [],
         }
         for offset in range(7)
     }
     unassigned_records: dict[str, list[CanonicalGroupIBRecord]] = {
         NEW: [],
         "OLD / HISTORICAL": [],
+        UNVERIFIED: [],
     }
 
     for result, record in zip(classifications, records):
@@ -856,6 +858,8 @@ def generate_daily_report(
             if result.classification == NEW
             else "OLD / HISTORICAL"
             if result.classification in {OLD, RESEEN, REPEAT}
+            else UNVERIFIED
+            if result.classification == UNVERIFIED
             else None
         )
         if category is None:
@@ -871,7 +875,8 @@ def generate_daily_report(
         categories = daily_records[day]
         day_new = categories[NEW]
         day_historical = categories["OLD / HISTORICAL"]
-        day_total = len(day_new) + len(day_historical)
+        day_unverified = categories[UNVERIFIED]
+        day_total = len(day_new) + len(day_historical) + len(day_unverified)
 
         # Omit dates with no records so the report contains only actionable tables.
         if not day_total:
@@ -916,9 +921,25 @@ def generate_daily_report(
                 _accounts_table(day_historical, include_actor=False)
             )
 
+        if day_unverified:
+            quick_view_story.extend(
+                [
+                    _section_banner(
+                        f"UNVERIFIED — NEEDS REVIEW ({len(day_unverified)})",
+                        background="#FEF3C7",
+                        border="#FCD34D",
+                    ),
+                    Spacer(1, 3),
+                ]
+            )
+            quick_view_story.extend(
+                _accounts_table(day_unverified, include_actor=False)
+            )
+
     for category, title in (
         (NEW, "NEW COMPROMISED ACCOUNTS"),
         ("OLD / HISTORICAL", "OLD / HISTORICAL COMPROMISED ACCOUNTS"),
+        (UNVERIFIED, "UNVERIFIED — NEEDS REVIEW"),
     ):
         pending = sorted(
             unassigned_records[category],
@@ -951,8 +972,9 @@ def generate_daily_report(
                 "NEW uses the recent provider compromise/detection timeline plus durable "
                 "local history. The seven-day chart groups NEW records by their provider "
                 "compromise/detection date. RESEEN/RECYCLED and REPEAT records are "
-                "included in the historical/known population. Provider-supplied "
-                "login/password fields are included by explicit project-owner request; "
+                "included in the historical/known population. UNVERIFIED records lack "
+                "a valid timeline and prior identity match and require manual review. "
+                "Provider-supplied login/password fields are included by explicit project-owner request; "
                 "API tokens and session cookies are excluded.",
                 note,
             ),
