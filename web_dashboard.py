@@ -87,7 +87,11 @@ def _validate_range(date_from: str, date_to: str) -> tuple[datetime, datetime]:
 
 
 def _source_category(record: CanonicalGroupIBRecord) -> str:
-    normalized = {value.strip().casefold() for value in record.source_types}
+    normalized = {
+        value.strip().casefold()
+        for value in (*record.source_types, *record.source_names)
+        if value and value.strip()
+    }
     if "unique" in normalized:
         return "Unique"
     if "combolist" in normalized or "combo list" in normalized:
@@ -110,15 +114,6 @@ def _timestamp(record: CanonicalGroupIBRecord) -> datetime | None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(PHILIPPINES_TZ)
 
-
-def _masked_login(value: str | None) -> str:
-    if not value:
-        return "Not provided"
-    if "@" in value:
-        name, domain = value.rsplit("@", 1)
-        visible = name[:2] if len(name) > 2 else name[:1]
-        return f"{visible}{'*' * max(3, len(name) - len(visible))}@{domain}"
-    return value[:2] + "*" * max(3, len(value) - 2)
 
 
 def _record_view(record: CanonicalGroupIBRecord, result: ClassificationResult) -> dict[str, Any]:

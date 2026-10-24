@@ -77,7 +77,7 @@ function render(payload){
  setText("assessment-text",payload.assessment.assessment);
  el("assessment-facts").replaceChildren();payload.assessment.facts.forEach(x=>addListItem(el("assessment-facts"),x));
  el("assessment-actions").replaceChildren();payload.assessment.analyst_attention.forEach(x=>addListItem(el("assessment-actions"),x));
- showNotice("Retrieved "+payload.collection.retrieved_count+" records; "+payload.collection.normalized_count+" normalized. Source categories match exact Unique/Combolist labels only; unknown labels remain Unmapped. Passwords are excluded.",m.unmapped_source>0);
+ showNotice("Retrieved "+payload.collection.retrieved_count+" records; "+payload.collection.normalized_count+" normalized. Source category is inferred from the exact Unique/Combolist label in returned source metadata; unknown labels remain Unmapped. Full account values are shown only when the provider actually returns them; provider-masked logins cannot be reconstructed, and absent password fields remain Not provided.",m.unmapped_source>0);
  if(m.new>0){const n=el("notice");n.className="notice";n.replaceChildren();const strong=document.createElement("strong");strong.textContent="New compromise notification active. ";n.append(strong,document.createTextNode(m.new+" NEW account(s) are shown in the highlighted rows above."))}
 }
 function queryString(refresh=false){const q=new URLSearchParams({date_from:el("date-from").value,date_to:el("date-to").value,domain:el("domain").value,source:el("category").value,classification:el("classification").value,page:String(currentPage),page_size:el("page-size").value});if(refresh)q.set("refresh","1");return q.toString()}

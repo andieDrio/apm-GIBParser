@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 from config import AppConfig
 from web_dashboard import (
-    _masked_login,
     _record_view,
     _source_category,
     _validate_range,
@@ -44,16 +43,15 @@ class DashboardHealthTests(unittest.TestCase):
         self.assertNotIn("analyst@example.invalid", str(payload))
         self.assertNotIn("test-token-value-not-a-real-secret", str(payload))
 
-    def test_login_masking_never_returns_plain_login(self) -> None:
-        masked = _masked_login("administrator@example.test")
-        self.assertNotEqual(masked, "administrator@example.test")
-        self.assertIn("@example.test", masked)
-
     def test_source_category_only_maps_exact_provider_labels(self) -> None:
         unique = normalize_record({"id": "1", "login": "a@example.test", "sourceType": ["Unique"]})
         combo = normalize_record({"id": "2", "login": "b@example.test", "sourceType": ["Combolist"]})
+        nested_unique = normalize_record({"id": "4", "login": "d@example.test", "source": [{"name": "Unique"}]})
+        string_unique = normalize_record({"id": "5", "login": "e@example.test", "sourceType": "Unique"})
         unknown = normalize_record({"id": "3", "login": "c@example.test", "sourceType": ["Leak site"]})
         self.assertEqual(_source_category(unique), "Unique")
+        self.assertEqual(_source_category(nested_unique), "Unique")
+        self.assertEqual(_source_category(string_unique), "Unique")
         self.assertEqual(_source_category(combo), "Combolist")
         self.assertEqual(_source_category(unknown), "Unmapped")
 

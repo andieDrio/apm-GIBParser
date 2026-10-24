@@ -20,6 +20,10 @@ def _object(value: Any) -> Mapping[str, Any]:
 
 
 def _strings(value: Any) -> tuple[str, ...]:
+    """Normalize provider string fields that may be a string or string array."""
+    if isinstance(value, str):
+        normalized = value.strip()
+        return (normalized,) if normalized else ()
     if not isinstance(value, list):
         return ()
     return tuple(item.strip() for item in value if isinstance(item, str) and item.strip())
