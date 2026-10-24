@@ -33,7 +33,24 @@ def _parse_timestamp(value: str | None) -> datetime | None:
     try:
         parsed = datetime.fromisoformat(normalized)
     except ValueError:
-        return None
+        # Group-IB/UI-shaped timestamps may arrive as e.g.
+        # "6/8/2023, 4:30:47 AM". Parse these explicitly instead of silently
+        # skipping the actual compromise date and falling back to recent
+        # first-seen/last-seen timestamps.
+        parsed = None
+        for date_format in (
+            "%m/%d/%Y, %I:%M:%S %p",
+            "%m/%d/%Y, %I:%M %p",
+            "%m/%d/%Y",
+            "%Y-%m-%d",
+        ):
+            try:
+                parsed = datetime.strptime(normalized, date_format)
+                break
+            except ValueError:
+                continue
+        if parsed is None:
+            return None
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
