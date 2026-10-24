@@ -27,6 +27,10 @@ from collections import Counter
 from typing import Any
 
 import httpx
+from dotenv import load_dotenv
+
+# Load the repository-local .env file before reading credential variables.
+load_dotenv()
 
 DEFAULT_BASE_URL = "https://tap.group-ib.com/api/v2/"
 COLLECTION_PATH = "compromised/account_group/updated"
