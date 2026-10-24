@@ -99,6 +99,22 @@ def _source_category(record: CanonicalGroupIBRecord) -> str:
     return "Unmapped"
 
 
+def _classification_matches(filter_value: str, classification: str) -> bool:
+    """Match dashboard temporal filters, including the combined Recycled / Old card."""
+    normalized_filter = filter_value.strip().casefold()
+    normalized_classification = classification.strip().casefold()
+    if normalized_filter in ("", "all"):
+        return True
+    if normalized_filter == "recycled-old":
+        return normalized_classification in {
+            "rese en/recycled".replace(" ", ""),
+            "reseen/recycled",
+            "old/historical",
+            "repeat",
+        }
+    return normalized_classification == normalized_filter
+
+
 def _timestamp(record: CanonicalGroupIBRecord) -> datetime | None:
     value = record.date_last_seen or record.date_first_seen
     if not value:
@@ -228,7 +244,7 @@ def _filtered_payload(query: dict[str, list[str]]) -> dict[str, Any]:
         category = _source_category(record).casefold()
         if source_filter != "all" and category != source_filter:
             continue
-        if classification_filter != "all" and classification.classification.casefold() != classification_filter:
+        if not _classification_matches(classification_filter, classification.classification):
             continue
         pairs.append((record, classification))
 

@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from config import AppConfig
 from web_dashboard import (
+    _classification_matches,
     _record_view,
     _source_category,
     _validate_range,
@@ -54,6 +55,13 @@ class DashboardHealthTests(unittest.TestCase):
         self.assertEqual(_source_category(string_unique), "Unique")
         self.assertEqual(_source_category(combo), "Combolist")
         self.assertEqual(_source_category(unknown), "Unmapped")
+
+    def test_clickable_metric_filter_matches_recycled_old_and_repeat(self) -> None:
+        self.assertTrue(_classification_matches("recycled-old", "RESEEN/RECYCLED"))
+        self.assertTrue(_classification_matches("recycled-old", "OLD/HISTORICAL"))
+        self.assertTrue(_classification_matches("recycled-old", "REPEAT"))
+        self.assertFalse(_classification_matches("recycled-old", "NEW"))
+        self.assertTrue(_classification_matches("all", "NEW"))
 
     def test_date_range_rejects_more_than_30_calendar_days(self) -> None:
         with self.assertRaises(ValueError):
@@ -105,6 +113,12 @@ class DashboardHealthTests(unittest.TestCase):
 
         html = (Path(__file__).resolve().parents[1] / "web" / "index.html").read_text(encoding="utf-8")
         self.assertIn('id="new-alert"', html)
+        self.assertEqual(html.count('class="card metric-card"'), 4)
+        self.assertIn('data-metric-filter="new"', html)
+        self.assertIn('data-metric-filter="recycled-old"', html)
+        self.assertIn('data-metric-filter="unique"', html)
+        self.assertIn('data-metric-filter="combolist"', html)
+        self.assertIn('function selectMetricFilter(filter)', html)
         self.assertIn('class="sidebar"', html)
         self.assertIn('class="top-nav"', html)
         self.assertIn('id="notification-bell"', html)
