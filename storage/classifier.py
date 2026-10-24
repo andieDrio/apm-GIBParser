@@ -76,21 +76,26 @@ def classify_record(
         None,
     )
 
+    cutoff = now - timedelta(days=newness_window_days)
     if existing is not None:
+        first_local_seen = _parse_timestamp(existing.first_local_seen)
+        same_observation = existing.last_observation_fingerprint == record.observation_fingerprint
         if existing.last_classification == UNVERIFIED and provider_newness_time is None:
             classification = UNVERIFIED
-            reason = (
-                "Identity was previously observed but still has no valid provider "
-                "timeline; manual review remains required."
-            )
-        elif existing.last_observation_fingerprint == record.observation_fingerprint:
-            classification = REPEAT
-            reason = "Durable identity exists and observation fingerprint is unchanged."
-        else:
+            reason = "Identity has no valid provider timeline; manual review remains required."
+        elif not same_observation:
             classification = RESEEN
             reason = "Durable identity exists but the provider observation changed."
+        elif provider_newness_time is not None and provider_newness_time >= cutoff and first_local_seen is not None and first_local_seen >= cutoff:
+            classification = NEW
+            reason = "Identity was first discovered within the newness window; unchanged refreshes preserve NEW status."
+        elif existing.last_classification == NEW and provider_newness_time is not None and provider_newness_time < cutoff:
+            classification = OLD
+            reason = "Previously new identity has aged beyond the configured timeline window."
+        else:
+            classification = REPEAT
+            reason = "Durable identity exists and observation fingerprint is unchanged."
     else:
-        cutoff = now - timedelta(days=newness_window_days)
         if provider_newness_time is None:
             classification = UNVERIFIED
             reason = (
