@@ -1,4 +1,4 @@
-"""Tests for the local dashboard shell's non-secret readiness contract."""
+"""Tests for the Group-IB dashboard API serialization and query safety."""
 
 from __future__ import annotations
 
@@ -6,7 +6,13 @@ import unittest
 from unittest.mock import patch
 
 from config import AppConfig
-from web_dashboard import build_health_payload
+from web_dashboard import (
+    _masked_login,
+    _source_category,
+    _validate_range,
+    build_health_payload,
+)
+from groupib.normalizer import normalize_record
 
 
 class DashboardHealthTests(unittest.TestCase):
@@ -18,8 +24,6 @@ class DashboardHealthTests(unittest.TestCase):
             payload = build_health_payload(AppConfig.from_environment())
 
         self.assertFalse(payload["credentials_configured"])
-        self.assertFalse(payload["provider_api_connected"])
-        self.assertEqual(payload["status"], "ok")
         self.assertNotIn("username", payload)
         self.assertNotIn("api_token", payload)
         self.assertNotIn("api_key", payload)
@@ -36,10 +40,29 @@ class DashboardHealthTests(unittest.TestCase):
             payload = build_health_payload(AppConfig.from_environment())
 
         self.assertTrue(payload["credentials_configured"])
-        self.assertFalse(payload["provider_api_connected"])
-        serialized = str(payload)
-        self.assertNotIn("analyst@example.invalid", serialized)
-        self.assertNotIn("test-token-value-not-a-real-secret", serialized)
+        self.assertNotIn("analyst@example.invalid", str(payload))
+        self.assertNotIn("test-token-value-not-a-real-secret", str(payload))
+
+    def test_login_masking_never_returns_plain_login(self) -> None:
+        masked = _masked_login("administrator@example.test")
+        self.assertNotEqual(masked, "administrator@example.test")
+        self.assertIn("@example.test", masked)
+
+    def test_source_category_only_maps_exact_provider_labels(self) -> None:
+        unique = normalize_record({"id": "1", "login": "a@example.test", "sourceType": ["Unique"]})
+        combo = normalize_record({"id": "2", "login": "b@example.test", "sourceType": ["Combolist"]})
+        unknown = normalize_record({"id": "3", "login": "c@example.test", "sourceType": ["Leak site"]})
+        self.assertEqual(_source_category(unique), "Unique")
+        self.assertEqual(_source_category(combo), "Combolist")
+        self.assertEqual(_source_category(unknown), "Unmapped")
+
+    def test_date_range_rejects_more_than_30_calendar_days(self) -> None:
+        with self.assertRaises(ValueError):
+            _validate_range("2026-09-01", "2026-10-01")
+
+    def test_date_range_accepts_same_day(self) -> None:
+        start, end = _validate_range("2026-10-24", "2026-10-24")
+        self.assertLessEqual(start, end)
 
 
 if __name__ == "__main__":

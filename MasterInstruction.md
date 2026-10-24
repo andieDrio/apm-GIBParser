@@ -127,15 +127,15 @@ Every cycle MUST follow:
 
 ## Architecture Gates
 - W1 — scope and architecture documentation aligned to approved Windows dashboard — **COMPLETE**.
-- W2 — local web server shell, safe static dashboard delivery, loopback-only binding and non-secret health endpoint — **IMPLEMENTED; CI validation pending**.
-- W3 — dashboard read model backed by existing normalization/history and verified Group-IB acquisition.
-- W4 — date/domain/source/category filters, newest-first sorting, pagination completeness and data-quality presentation.
+- W2 — local web server shell, safe static dashboard delivery, loopback-only binding and non-secret health endpoint — **COMPLETE**.
+- W3 — dashboard read model backed by existing normalization/history and Group-IB collection slice — **IMPLEMENTED; automated validation pending**.
+- W4 — validate source category labels, date/domain filters, pagination completeness, sorting and data-quality presentation.
 - W5 — NEW / RECYCLED / OLD / UNVERIFIED temporal classification validated against deterministic tests and actual source semantics.
 - W6 — evidence-based initial assessment with explicit confidence and limits.
 - W7 — filter-faithful PDF and safe CSV exports with provenance.
 - W8 — Windows launch/run instructions, regression checks and end-to-end validation.
 
-Current next gate: **W2 automated validation, then W3 provider-backed read model**. Do not claim web dashboard or complete live data collection is done until implemented and verified.
+Current next gate: **W3 CI validation, then W4**. The dashboard read model uses the existing GroupIBClient date-bounded slice, canonical normalizer, durable SQLite classifier and evidence-based assessment. Refresh collects a validated maximum 30-calendar-day range and caches the successful snapshot in process memory; filter/pagination requests do not reclassify records. The dashboard masks login identifiers and does not return plaintext passwords or API credentials. Unique/Combolist counts only match exact provider source labels; other labels remain Unmapped until the live source contract is confirmed.
 
 ## Reporting Standard
 Every development response states:

@@ -65,49 +65,22 @@ This validates authentication and the observed updated-feed schema for one bound
 - Dashboard shell contains no fake account data. Filters/metrics/exports remain visibly unavailable until W3+ is implemented.
 
 ## Dashboard Read Model
-The dashboard exposes only data backed by:
-1. actual Group-IB response fields;
-2. normalized canonical records;
-3. durable local observations/classification;
-4. explicit query and collection metadata.
+W3 uses the existing `GroupIBClient.get_compromised_account_slice`, canonical normalizer, and SQLite classifier/history. The browser calls same-origin `GET /api/records?refresh=1&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD`; the backend validates the range (maximum 30 calendar days), retrieves the full bounded provider slice through the existing resultId pagination guard, normalizes it, classifies it once on refresh, and holds the successful snapshot in process memory. Subsequent filter/page requests operate on that snapshot and do not re-run classification or mutate history. A failed refresh does not replace the last successful snapshot.
 
-Never synthesize record values when fields are absent. Render missing values as “Not provided” or equivalent.
+The JSON read model includes provider refresh time, retrieval/normalization counts, collection-completion state, filter state, page metadata, source category counts, temporal classification counts, and assessment facts. It returns masked login identifiers and never serializes plaintext passwords, API tokens or authorization data. Filters cover provider last-seen timestamp (falling back to first-seen), exact normalized domain, exact provider source labels for Unique/Combolist where present, temporal classification, and bounded pagination. Unknown source labels remain Unmapped; category counts are not inferred from unrelated fields.
+
+Collection is limited to the most recent 30 calendar days per request. Custom ranges must fit within that bound. Source-category semantics are still provisional until live values or official documentation confirm exact Unique/Combolist labels. Full retrieval is only claimed when the existing resultId pagination loop completes without provider/schema errors.
 
 ### Required filters
 - Date preset: last 7 days.
 - Date preset: last 30 days (one month).
-- Custom date range: inclusive date boundary with validation that start <= end.
+- Custom date range: inclusive date boundary with validation that start <= end; provider collection range is limited to 30 calendar days.
 - Victim domain: exact normalized domain filter and domain grouping.
-- Source category: Unique / Combolist only where confirmed to be in actual provider contract.
+- Source category: Unique / Combolist only where confirmed to be in actual provider contract; unknown values remain Unmapped.
 - Temporal label: NEW / RECYCLED / OLD / UNVERIFIED.
-- Newest-first order by an explicitly labelled source timestamp, defaulting to `dateLastSeen` and falling back to `dateFirstSeen` only when Last Seen is unavailable.
+- Newest-first order by `dateLastSeen`, falling back to `dateFirstSeen` only when Last Seen is unavailable.
 - Provider timestamps remain immutable and distinct from first/last local observation times.
 - Partial collection, API errors, normalization warnings and last refresh time are visible.
-
-### Temporal classification
-Temporal labels are independent of Group-IB source categories:
-- **NEW**: no durable identity match and the source timeline passes the existing documented newness policy.
-- **RECYCLED / RESEEN**: an existing identity reappears or has a changed observation according to the existing classifier.
-- **OLD / HISTORICAL**: source timeline is outside the newness window or local history confirms prior knowledge.
-- **UNVERIFIED**: insufficient/invalid time or identity evidence, conflicting contract data, or incomplete collection prevents a reliable decision.
-
-Use the existing deterministic classifier as the starting point; adjust only with explicit tests. “Unique” does not mean temporally new. “Combolist” does not automatically mean recycled or old. A returned record is not inherently new.
-
-## Initial Assessment
-Assessment is deterministic and generated from observed record counts, affected domains, source types, timeline coverage, collection completeness, and prior baseline availability. It must:
-- include facts and the precise evidence basis;
-- state confidence and data limitations;
-- avoid asserting that an account remains accessible or that an organization is safe;
-- avoid inventing provider severity;
-- identify records needing analyst review without claiming a definitive compromise verdict.
-
-## Export
-- PDF: filtered view and assessment, source fields and timestamps, filter criteria, generation time, collection status, source-provenance note.
-- CSV: same filtered records and relevant provider fields; quote correctly and neutralize spreadsheet formula injection.
-- Exports must match the active filters exactly, including date range, domain, source category, temporal label and sort basis.
-- Default mask for account identifiers; no plaintext passwords by default.
-- ReportLab remains the PDF renderer.
-- API credentials/session data must never appear in any export.
 
 ## Security and Data Handling
 - Group-IB credentials remain in local `.env` / backend settings, never in frontend code or browser responses.
@@ -130,12 +103,12 @@ The local web dashboard must not break:
 
 ## Architecture Gates
 - W1 — documentation aligned to approved Windows dashboard scope — **COMPLETE**.
-- W2 — local web application shell with loopback-only serving and non-secret health endpoint — **IMPLEMENTED; automated validation pending CI**.
-- W3 — dashboard read model using existing client/normalizer/history.
-- W4 — date/domain/source filters, newest-first ordering and collection integrity.
-- W5 — classifications verified with deterministic tests.
-- W6 — initial evidence-based assessment.
-- W7 — safe PDF/CSV exports.
-- W8 — Windows launch and end-to-end regression validation.
+- W2 — local web application shell, loopback-only serving and non-secret health endpoint — **COMPLETE**.
+- W3 — provider-backed dashboard read model using client, normalizer and durable history — **IMPLEMENTED; CI validation pending**.
+- W4 — validate source-category semantics, complete pagination, domain/date filters and data-quality presentation.
+- W5 — verify NEW / RECYCLED / OLD / UNVERIFIED classification with live provider semantics and deterministic tests.
+- W6 — evidence-based initial assessment with explicit confidence and limits.
+- W7 — filter-faithful PDF and safe CSV exports with provenance.
+- W8 — Windows launch/run instructions and end-to-end validation.
 
-Current gate: W2 validation and then W3. Live Group-IB access is validated only for the bounded updated-feed request described above.
+Current gate: W3 automated validation, then W4. Live Group-IB validation remains bounded to the existing API probe; dashboard collection has not yet been independently validated live.

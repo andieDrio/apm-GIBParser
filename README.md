@@ -5,9 +5,10 @@ A local, single-operator Windows web dashboard being built by extending the exis
 ## Current status
 - Live bounded API contract probe: HTTP 200 for `GET /api/v2/compromised/account_group/updated`, limit 1.
 - W1 documentation scope alignment: complete.
-- W2 local dashboard shell: implemented; CI validation pending.
-- W3 provider-backed account read model: next.
-- The current shell deliberately shows no account findings. Filters, classification, assessment and exports are not enabled until actual provider-backed read-model integration is complete.
+- W2 local dashboard shell: complete.
+- W3 provider-backed read model: implemented; automated validation pending.
+- The dashboard now has a Refresh from Group-IB action, date/domain/source/classification filters, pagination, masked account identifiers and an evidence-based initial assessment. The read model uses the existing Group-IB client and history classifier. The dashboard has not yet been independently validated against a full live collection.
+- Unique/Combolist counts only match exact source labels; unknown values remain Unmapped. Validate source semantics before treating those category counts as authoritative.
 
 ## Start the local dashboard shell
 
