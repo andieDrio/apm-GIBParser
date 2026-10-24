@@ -344,7 +344,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
         for name, value in SECURITY_HEADERS.items():
             self.send_header(name, value)
         self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionAbortedError, ConnectionResetError):
+            # Browsers may cancel a request while a refresh is in flight.
+            # The client disconnect must not produce a noisy server traceback.
+            return
 
     def _json(self, status: int, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
