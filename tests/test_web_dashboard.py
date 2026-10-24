@@ -100,7 +100,7 @@ class DashboardHealthTests(unittest.TestCase):
         self.assertIn('id="export-pdf"', html)
         self.assertIn('<option>10</option><option selected>15</option><option>25</option>', html)
         self.assertIn('Compromised date', html)
-        self.assertIn('class="credential"', html)
+        self.assertIn('td.className="credential"', html)
 
     def test_dashboard_uses_automatic_filters_and_new_compromise_alert(self) -> None:
         from pathlib import Path
