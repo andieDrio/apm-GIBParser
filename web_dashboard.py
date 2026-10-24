@@ -107,7 +107,6 @@ def _classification_matches(filter_value: str, classification: str) -> bool:
         return True
     if normalized_filter == "recycled-old":
         return normalized_classification in {
-            "rese en/recycled".replace(" ", ""),
             "reseen/recycled",
             "old/historical",
             "repeat",
