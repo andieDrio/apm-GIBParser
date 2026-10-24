@@ -71,7 +71,7 @@ class HistoryClassificationTests(unittest.TestCase):
                 self.assertEqual(result.classification, NEW)
                 self.assertIsNotNone(store.get("provider:record-001"))
 
-    def test_same_observation_is_repeat(self) -> None:
+    def test_unchanged_new_account_stays_new_across_refreshes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             with HistoryStore(Path(directory) / "history.db") as store:
                 record = make_record()
@@ -79,7 +79,7 @@ class HistoryClassificationTests(unittest.TestCase):
                 second = classify_record(store, record, observed_at=OBSERVED_AT)
 
                 self.assertEqual(first.classification, NEW)
-                self.assertEqual(second.classification, REPEAT)
+                self.assertEqual(second.classification, NEW)
 
     def test_changed_known_observation_is_reseen(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
