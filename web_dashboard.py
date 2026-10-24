@@ -115,19 +115,46 @@ def _classification_matches(filter_value: str, classification: str) -> bool:
 
 
 def _timestamp(record: CanonicalGroupIBRecord) -> datetime | None:
-    value = record.date_last_seen or record.date_first_seen
-    if not value:
-        return None
-    normalized = value.strip()
-    if normalized.endswith("Z"):
-        normalized = normalized[:-1] + "+00:00"
-    try:
-        parsed = datetime.fromisoformat(normalized)
-    except ValueError:
-        return None
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(PHILIPPINES_TZ)
+    """Return the timeline timestamp used by date filters and newest-first sorting.
+
+    Compromise age—not recent account activity—defines the date range. A recent
+    Last Seen must not pull a compromise from 2023 into a recent-week view.
+    Fallback order matches the classifier's available provider timeline:
+    first compromised, last compromised, detected, then first seen. Last Seen
+    is intentionally excluded from temporal filtering and sorting.
+    """
+    for value in (
+        record.date_first_compromised,
+        record.date_last_compromised,
+        record.date_detected,
+        record.date_first_seen,
+    ):
+        if not value:
+            continue
+        normalized = value.strip()
+        if normalized.endswith("Z"):
+            normalized = normalized[:-1] + "+00:00"
+        try:
+            parsed = datetime.fromisoformat(normalized)
+        except ValueError:
+            parsed = None
+            for date_format in (
+                "%m/%d/%Y, %I:%M:%S %p",
+                "%m/%d/%Y, %I:%M %p",
+                "%m/%d/%Y",
+                "%Y-%m-%d",
+            ):
+                try:
+                    parsed = datetime.strptime(normalized, date_format)
+                    break
+                except ValueError:
+                    continue
+            if parsed is None:
+                continue
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(PHILIPPINES_TZ)
+    return None
 
 
 
@@ -296,7 +323,7 @@ def _filtered_payload(query: dict[str, list[str]]) -> dict[str, Any]:
             "retrieved_count": _snapshot["retrieved_count"],
             "normalized_count": _snapshot["normalized_count"],
             "collection_complete": _snapshot["collection_complete"],
-            "sort_basis": "dateLastSeen; fallback dateFirstSeen",
+            "sort_basis": "dateFirstCompromised; fallback dateLastCompromised, dateDetected, dateFirstSeen",
         },
         "filters": {
             "date_from": date_from,
