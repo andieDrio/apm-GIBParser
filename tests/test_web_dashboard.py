@@ -69,7 +69,7 @@ class DashboardHealthTests(unittest.TestCase):
 
         html = (Path(__file__).resolve().parents[1] / "web" / "index.html").read_text(encoding="utf-8")
         self.assertIn('id="new-alert"', html)
-        self.assertIn('addEventListener("change",scheduleDateLoad)', html)
+        self.assertIn('el("date-from").addEventListener("change"', html)
         self.assertIn('addEventListener("change",applyFilter)', html)
         self.assertIn('load(true)', html)
         self.assertNotIn('id="refresh"', html)
