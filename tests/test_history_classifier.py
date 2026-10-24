@@ -164,6 +164,24 @@ class HistoryClassificationTests(unittest.TestCase):
 
                 self.assertEqual(result.classification, OLD)
 
+    def test_old_localized_compromise_date_overrides_recent_observation_dates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with HistoryStore(Path(directory) / "history.db") as store:
+                result = classify_record(
+                    store,
+                    make_record(
+                        first_seen="7/20/2023, 7:37:25 AM",
+                        last_seen="10/24/2026, 7:13:20 PM",
+                        compromised="6/8/2023, 4:30:47 AM",
+                        detected="10/24/2026, 7:13:20 PM",
+                    ),
+                    observed_at=datetime(2026, 10, 24, 12, 0, tzinfo=timezone.utc),
+                    newness_window_days=7,
+                )
+
+                self.assertEqual(result.classification, OLD)
+                self.assertIn("predates", result.reason)
+
     def test_missing_timeline_is_unverified_not_new(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             with HistoryStore(Path(directory) / "history.db") as store:
