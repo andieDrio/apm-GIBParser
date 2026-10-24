@@ -25,7 +25,7 @@ Read model + filters + evidence-based assessment
 Dashboard / PDF export / CSV export
 ```
 
-The browser must never call Group-IB directly. The browser must never receive the API token or HTTP Basic Authorization data.
+The browser must never call Group-IB directly. The browser must never receive the API token or HTTP Basic Authorization data. The local-only dashboard may display provider-returned compromised account login/password fields to the single operator; CSV/PDF exports must be treated as confidential and include only the active filters.
 
 ## Windows Runtime
 - Target OS: Windows 10/11.

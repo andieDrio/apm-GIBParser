@@ -8,6 +8,16 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 from zoneinfo import ZoneInfo
+from xml.sax.saxutils import escape
+
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+
+import csv
+import io
 import json
 import threading
 
@@ -115,11 +125,14 @@ def _record_view(record: CanonicalGroupIBRecord, result: ClassificationResult) -
     return {
         "first_seen": record.date_first_seen,
         "last_seen": record.date_last_seen,
+        "date_first_compromised": record.date_first_compromised or record.date_last_compromised,
+        "date_detected": record.date_detected,
         "date_first_compromised": record.date_first_compromised,
         "date_last_compromised": record.date_last_compromised,
         "date_detected": record.date_detected,
         "domain": record.domain or record.service_domain or "Not provided",
-        "login": _masked_login(record.account),
+        "login": record.account or record.username or "Not provided",
+        "password": record.password or "Not provided",
         "source_types": list(record.source_types),
         "source_category": _source_category(record),
         "malware": list(record.stealer_families),
@@ -321,6 +334,110 @@ class DashboardHandler(BaseHTTPRequestHandler):
         body = json.dumps(payload, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
         self._send(status, body, "application/json; charset=utf-8")
 
+    def _attachment(self, body: bytes, content_type: str, filename: str) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+        for name, value in SECURITY_HEADERS.items():
+            self.send_header(name, value)
+        self.end_headers()
+        self.wfile.write(body)
+
+    @staticmethod
+    def _export_payload(query: dict[str, list[str]]) -> dict[str, Any]:
+        """Return all records matching filters, not only the visible page."""
+        first = dict(query)
+        first["page"] = ["1"]
+        first["page_size"] = ["200"]
+        payload = _filtered_payload(first)
+        all_records = list(payload["records"])
+        for page in range(2, payload["total_pages"] + 1):
+            next_query = dict(first)
+            next_query["page"] = [str(page)]
+            all_records.extend(_filtered_payload(next_query)["records"])
+        payload["records"] = all_records
+        return payload
+
+    @staticmethod
+    def _pdf_export(payload: dict[str, Any]) -> bytes:
+        """Build a confidential PDF of the current filtered Group-IB records."""
+        buffer = io.BytesIO()
+        document = SimpleDocTemplate(
+            buffer, pagesize=landscape(A4), rightMargin=8 * mm,
+            leftMargin=8 * mm, topMargin=9 * mm, bottomMargin=9 * mm,
+            title="Group-IB Compromised Accounts Export",
+            author="Accounts Intelligence",
+        )
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            "ExportTitle", parent=styles["Title"], fontSize=15, leading=18,
+            textColor=colors.HexColor("#12304A"), alignment=0, spaceAfter=5,
+        )
+        note_style = ParagraphStyle(
+            "ExportNote", parent=styles["Normal"], fontSize=7, leading=9,
+            textColor=colors.HexColor("#7F1D1D"), spaceAfter=8,
+        )
+        cell_style = ParagraphStyle(
+            "ExportCell", parent=styles["Normal"], fontSize=5.5, leading=6.5,
+            splitLongWords=True, wordWrap="CJK",
+        )
+        header_style = ParagraphStyle(
+            "ExportHeader", parent=cell_style, fontName="Helvetica-Bold",
+            textColor=colors.white,
+        )
+        story = [
+            Paragraph("Group-IB Compromised Accounts", title_style),
+            Paragraph(
+                "CONFIDENTIAL — includes sensitive compromised account identifiers and password values. "
+                "Store and share only through approved secure channels.", note_style,
+            ),
+            Paragraph(escape(
+                f"Filter: {payload['filters']['date_from']} to {payload['filters']['date_to']} "
+                f"| Domain: {payload['filters']['domain'] or 'All'} "
+                f"| Records: {len(payload['records'])}"
+            ), styles["Normal"]),
+            Spacer(1, 5 * mm),
+        ]
+        headers = [
+            "Compromised date", "First seen", "Last seen", "Victim domain",
+            "Email / Login", "Password", "Source type", "Malware",
+            "Classification", "Initial assessment",
+        ]
+        rows = [[Paragraph(escape(value), header_style) for value in headers]]
+        for record in payload["records"]:
+            values = [
+                record.get("date_first_compromised") or "Not provided",
+                record.get("first_seen") or "Not provided",
+                record.get("last_seen") or "Not provided",
+                record.get("domain") or "Not provided",
+                record.get("login") or "Not provided",
+                record.get("password") or "Not provided",
+                ", ".join(record.get("source_types") or []) or "Not provided",
+                ", ".join(record.get("malware") or []) or "Not provided",
+                record.get("classification") or "UNVERIFIED",
+                record.get("classification_reason") or "Not provided",
+            ]
+            rows.append([Paragraph(escape(str(value)), cell_style) for value in values])
+        widths = [49, 49, 49, 65, 70, 64, 55, 55, 57, 87]
+        available = landscape(A4)[0] - 16 * mm
+        scale = available / sum(widths)
+        table = Table(rows, colWidths=[width * scale for width in widths], repeatRows=1)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#234C70")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#CBD5E1")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F1F5F9")]),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 3),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 3),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        story.append(table)
+        document.build(story)
+        return buffer.getvalue()
+
     def do_GET(self) -> None:  # noqa: N802
         global _snapshot
         parsed = urlsplit(self.path)
@@ -335,11 +452,51 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/health":
             self._json(200, build_health_payload())
             return
-        if parsed.path != "/api/records":
+        if parsed.path not in ("/api/records", "/api/export.csv", "/api/export.pdf"):
             self._send(404, b"Not found.", "text/plain; charset=utf-8")
             return
 
         query = parse_qs(parsed.query, keep_blank_values=True)
+        if parsed.path in ("/api/export.csv", "/api/export.pdf"):
+            try:
+                with _snapshot_lock:
+                    payload = self._export_payload(query)
+                stamp = datetime.now(PHILIPPINES_TZ).strftime("%Y%m%d_%H%M%S")
+                if parsed.path.endswith(".csv"):
+                    output = io.StringIO(newline="")
+                    writer = csv.writer(output)
+                    writer.writerow([
+                        "Compromised Date", "First Seen", "Last Seen", "Victim Domain",
+                        "Email / Login", "Password", "Source Type", "Malware",
+                        "Classification", "Initial Assessment",
+                    ])
+                    for record in payload["records"]:
+                        writer.writerow([
+                            record.get("date_first_compromised") or "",
+                            record.get("first_seen") or "",
+                            record.get("last_seen") or "",
+                            record.get("domain") or "",
+                            record.get("login") or "",
+                            record.get("password") or "",
+                            "; ".join(record.get("source_types") or []),
+                            "; ".join(record.get("malware") or []),
+                            record.get("classification") or "UNVERIFIED",
+                            record.get("classification_reason") or "",
+                        ])
+                    self._attachment(
+                        output.getvalue().encode("utf-8-sig"),
+                        "text/csv; charset=utf-8",
+                        f"groupib_accounts_{stamp}.csv",
+                    )
+                else:
+                    self._attachment(
+                        self._pdf_export(payload), "application/pdf",
+                        f"groupib_accounts_{stamp}.pdf",
+                    )
+            except (ValueError, GroupIBClientError, OSError) as exc:
+                self._json(400, {"status": "error", "message": str(exc)})
+            return
+
         if (query.get("refresh") or [""])[0] == "1":
             date_from = (query.get("date_from") or [""])[0]
             date_to = (query.get("date_to") or [""])[0]
@@ -375,7 +532,7 @@ def main() -> int:
         raise SystemExit(f"Dashboard entry point not found: {INDEX_FILE}")
     server = ThreadingHTTPServer((HOST, PORT), DashboardHandler)
     print(f"Group-IB dashboard: http://{HOST}:{PORT}")
-    print("Bound to loopback only. Click Refresh from Group-IB to load records.")
+    print("Bound to loopback only. Records load automatically when the dashboard opens.")
     print("Press Ctrl+C to stop.")
     try:
         server.serve_forever()

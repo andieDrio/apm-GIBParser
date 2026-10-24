@@ -7,7 +7,7 @@ A local, single-operator Windows web dashboard being built by extending the exis
 - W1 documentation scope alignment: complete.
 - W2 local dashboard shell: complete.
 - W3 provider-backed read model and automatic-filter UI: implemented; automated validation pending.
-- The dashboard loads Group-IB records automatically on startup. Date changes automatically re-filter the loaded snapshot or query Group-IB when the selected range extends beyond it; domain, source, classification and page-size filters apply without manual buttons. An in-app alert and highlighted rows identify records classified NEW. Logins are masked; plaintext passwords and API credentials are not returned to the browser.
+- The dashboard loads Group-IB records automatically on startup. Date changes automatically re-filter the loaded snapshot or query Group-IB when the selected range extends beyond it; domain, source, classification and page-size filters apply without manual buttons. An in-app alert and highlighted rows identify records classified NEW. The table displays the full Group-IB login and returned password, with compromise date, first seen and last seen. CSV/PDF exports include all filtered records rather than only the visible page. These exports contain sensitive compromised credentials; the dashboard remains bound to loopback only.
 - Unique/Combolist counts only match exact source labels; unknown values remain Unmapped. Validate source semantics before treating those category counts as authoritative.
 
 ## Start the local dashboard shell

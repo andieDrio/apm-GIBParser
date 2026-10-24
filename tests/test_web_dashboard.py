@@ -8,6 +8,7 @@ from unittest.mock import patch
 from config import AppConfig
 from web_dashboard import (
     _masked_login,
+    _record_view,
     _source_category,
     _validate_range,
     build_health_payload,
@@ -63,6 +64,43 @@ class DashboardHealthTests(unittest.TestCase):
     def test_date_range_accepts_same_day(self) -> None:
         start, end = _validate_range("2026-10-24", "2026-10-24")
         self.assertLessEqual(start, end)
+
+    def test_record_view_includes_compromise_timeline_and_unmasked_credentials(self) -> None:
+        from pathlib import Path
+        from datetime import datetime, timezone
+        import tempfile
+        from storage.classifier import classify_record
+        from storage.history import HistoryStore
+
+        record = normalize_record({
+            "id": "sensitive-test",
+            "login": "person@example.test",
+            "password": "local-test-password",
+            "dateFirstCompromised": "2026-10-20T01:00:00Z",
+            "dateFirstSeen": "2026-10-21T01:00:00Z",
+            "dateLastSeen": "2026-10-22T01:00:00Z",
+            "dateDetected": "2026-10-22T01:00:00Z",
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            with HistoryStore(Path(directory) / "history.db") as store:
+                result = classify_record(store, record, observed_at=datetime(2026, 10, 24, tzinfo=timezone.utc))
+        view = _record_view(record, result)
+        self.assertEqual(view["login"], "person@example.test")
+        self.assertEqual(view["password"], "local-test-password")
+        self.assertEqual(view["date_first_compromised"], "2026-10-20T01:00:00Z")
+        self.assertEqual(view["first_seen"], "2026-10-21T01:00:00Z")
+        self.assertEqual(view["last_seen"], "2026-10-22T01:00:00Z")
+
+    def test_dashboard_has_fixed_footer_export_and_small_page_sizes(self) -> None:
+        from pathlib import Path
+
+        html = (Path(__file__).resolve().parents[1] / "web" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('class="dashboard-scroll"', html)
+        self.assertIn('id="export-csv"', html)
+        self.assertIn('id="export-pdf"', html)
+        self.assertIn('<option>10</option><option selected>15</option><option>25</option>', html)
+        self.assertIn('Compromised date', html)
+        self.assertIn('class="credential"', html)
 
     def test_dashboard_uses_automatic_filters_and_new_compromise_alert(self) -> None:
         from pathlib import Path
