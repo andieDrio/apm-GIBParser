@@ -10,6 +10,7 @@ from web_dashboard import (
     _classification_matches,
     _record_view,
     _source_category,
+    _timestamp,
     _validate_range,
     build_health_payload,
 )
@@ -71,6 +72,38 @@ class DashboardHealthTests(unittest.TestCase):
         self.assertTrue(_classification_matches("recycled-old", "REPEAT"))
         self.assertFalse(_classification_matches("recycled-old", "NEW"))
         self.assertTrue(_classification_matches("all", "NEW"))
+
+    def test_date_filter_timestamp_uses_compromise_date_not_recent_last_seen(self) -> None:
+        record = normalize_record({
+            "id": "old-compromise",
+            "login": "user@example.test",
+            "dateFirstCompromised": "6/8/2023, 4:30:47 AM",
+            "dateFirstSeen": "7/20/2023, 7:37:25 AM",
+            "dateLastSeen": "10/24/2026, 7:13:20 PM",
+        })
+
+        timestamp = _timestamp(record)
+
+        self.assertIsNotNone(timestamp)
+        self.assertEqual(timestamp.year, 2023)
+        self.assertEqual(timestamp.month, 6)
+        self.assertEqual(timestamp.day, 8)
+
+    def test_date_filter_falls_back_when_compromise_date_is_missing(self) -> None:
+        record = normalize_record({
+            "id": "detected-recently",
+            "login": "user@example.test",
+            "dateDetected": "2026-10-24T10:00:00Z",
+            "dateFirstSeen": "2026-10-20T10:00:00Z",
+            "dateLastSeen": "2026-10-24T11:00:00Z",
+        })
+
+        timestamp = _timestamp(record)
+
+        self.assertIsNotNone(timestamp)
+        self.assertEqual(timestamp.year, 2026)
+        self.assertEqual(timestamp.month, 10)
+        self.assertEqual(timestamp.day, 24)
 
     def test_date_range_rejects_more_than_30_calendar_days(self) -> None:
         with self.assertRaises(ValueError):
