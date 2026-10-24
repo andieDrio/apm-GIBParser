@@ -254,7 +254,7 @@ def _filtered_payload(query: dict[str, list[str]]) -> dict[str, Any]:
     )
     category_counts = {
         category: sum(_source_category(record).casefold() == category.casefold()
-                      for record in _snapshot["records"])
+                      for record in records)
         for category in ("Unique", "Combolist", "Unmapped")
     }
     return {
