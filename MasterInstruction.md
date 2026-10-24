@@ -1,318 +1,147 @@
 # Master Instruction & Permanent Development Loop
 
 ## Project
-**Group-IB Daily Threat Intelligence Monitor & PDF Reporter**
+**Group-IB Threat Intelligence Monitoring Web Dashboard & Report Export**
 
 ## Authority
 This document is the permanent governing specification for this repository unless explicitly changed by the project owner.
 
 ## Objective
-Build a small, reliable daily Group-IB monitoring utility whose primary workflow is:
+Extend the existing Group-IB monitoring and reporting project into a local, single-operator Windows web dashboard while preserving its verified provider client, canonical normalization, durable SQLite history, deterministic classification, evidence-based assessment and ReportLab PDF generation.
+
+The authoritative data source is the configured official Group-IB TI&A API. Do not invent intelligence, provider fields, totals, timestamps, or classifications.
+
+## Core Workflow
 
 ```
-Group-IB
-   ↓
-Daily Retrieval
-   ↓
-Normalization
-   ↓
-Local History
-   ↓
-NEW vs OLD/HISTORICAL Classification
-   ↓
-Quick View Metrics + Professional Bar Charts
-   ↓
-Daily PDF Report
+Windows Browser (localhost)
+        ↓
+Local Python Web Backend
+        ↓
+Group-IB TI&A API (server-side credentials)
+        ↓
+Validate → Normalize → Durable History
+        ↓
+Unique / Combolist source categories
+        ↓
+NEW / RECYCLED / OLD / UNVERIFIED timeline classification
+        ↓
+Domain views → Initial evidence-based assessment
+        ↓
+PDF / CSV export from retrieved Group-IB records
 ```
 
-The project is **not** a general CTI investigation platform, not ThreatForge, and not a multi-user web application. The deliverable is a focused daily monitoring/reporting tool.
+The app is a read-only monitoring and reporting interface. It must not alter Group-IB data, attempt to log in to compromised accounts, or transmit account data to third-party services.
 
-## Core User Workflow
-The normal operator workflow must eventually be one command:
+## Required Dashboard Capabilities
+- Show compromised-account records retrieved from Group-IB.
+- Separate NEW from RECYCLED / OLD based on source evidence and durable local history. Keep ambiguous records UNVERIFIED instead of guessing.
+- Preserve Group-IB source category (including Unique and Combolist when exposed by the verified API contract) independently from temporal classification.
+- Filter and group records by victim domain.
+- Date options: last 1 week, last 1 month (30 days), and custom start/end dates.
+- Sort newest to oldest using an explicitly selected and displayed provider timestamp; never overwrite source timestamps.
+- Show First Seen, Last Seen, compromised/detected dates where the provider actually supplies them, source type, source, malware/infostealer, threat actor and event counts when available.
+- Provide initial deterministic, evidence-linked assessment with confidence and data-coverage caveats.
+- Export filtered records to PDF and CSV, preserving source provenance and collection time.
+- Clearly display collection status, actual records retrieved, pagination completion, source timestamp basis, last refresh and data-quality warnings.
+- Mask sensitive account/credential fields by default. Never display passwords by default, and never export plaintext passwords unless a separate explicit, secure operator workflow is later approved. API keys, authorization headers and session cookies must never appear in frontend responses, logs, exports or source control.
+- Support Windows 10/11 local execution and browser access via localhost. Bind to loopback by default, not a public network interface.
 
-```bash
-python daily_report.py
-```
+## Stack Direction
+- Backend: existing Python codebase, FastAPI for local HTTP routes only if compatible with project dependencies and selected implementation.
+- Frontend: lightweight web UI. Prefer a small static HTML/CSS/JavaScript dashboard served by the backend for the first increment; do not add a large frontend framework without a demonstrated need.
+- Persistence: preserve existing SQLite durable history.
+- PDF: preserve existing ReportLab report pipeline and add dashboard-filtered export in a controlled way.
+- Credentials: existing local .env and server-side configuration only.
+- Keep current CLI daily report working during web-dashboard implementation.
 
-That command should:
-1. load Group-IB credentials from local environment configuration;
-2. retrieve the configured daily Group-IB intelligence;
-3. validate and normalize provider records;
-4. compare records against durable local history;
-5. classify records as **NEW** or **OLD / HISTORICAL** according to documented rules;
-6. calculate daily summary metrics;
-7. generate professional boxed, color-coded bar charts from actual returned data;
-8. generate the dated PDF report automatically under `reports/`;
-9. print a concise completion summary without printing secrets or unnecessary sensitive intelligence.
+## Official Group-IB API Contract
+- Use the existing Group-IB client and verified contract as the starting point; do not replace it with a guessed endpoint.
+- The repository records a verified Personal Token authentication model and bounded Group-IB collection/sequence-update endpoints. Reinspect current source and tests before any API contract change.
+- Revalidate the current contract with the safe bounded `tools/groupib_contract_probe.py` when the operator runs it locally with their credentials.
+- API access has not been live-tested in the present development session. Do not claim a new live verification result without actual HTTP response evidence.
+- Respect existing pagination guards, timeout/error handling and rate limits.
+- Never print or persist real credentials or raw response values in diagnostic output; report field names/types only.
 
-No browser interaction should be required to generate the daily report.
+## Classification and Accuracy
+- NEW means a record has no matching durable identity and passes the documented newness/timeline rules. The current classifier's configured policy remains authoritative until changed with tests.
+- RECYCLED / RESEEN means a previously known identity has resurfaced or changed observation fingerprint according to the existing classifier.
+- OLD / HISTORICAL means provider timeline is outside the configured newness window or local history demonstrates a known record, according to existing classification semantics.
+- UNVERIFIED means required provider timestamps or identity fields are missing/invalid, the source contract is ambiguous, or collection is partial in a way that could change the conclusion.
+- Source categories Unique / Combolist are independent from temporal labels.
+- A record returned today is not automatically new.
+- A clean/empty query is not evidence the monitored environment is safe.
+- Keep UTC-aware provider timestamps in canonical storage; render local timezone labels clearly (Asia/Manila).
+- Domain grouping uses normalized domain fields but preserves original provider values for provenance.
+- New source fields or filters must be grounded in actual provider response schema or verified official documentation.
 
-## Scope
-
-### Primary
-- Group-IB compromised-account intelligence.
-- Daily new-compromise monitoring.
-- Separation of previously known/old accounts from daily new compromises.
-- Compromised Date, Date Detected, First Seen and Last Seen visibility.
-- NEW is evaluated with a default 7-day provider compromise/detection window.
-- A dedicated seven-day NEW compromise trend chart is included in the PDF.
-- Dedicated Source Link as the final account-table column.
-- Infostealer fields when explicitly supplied by Group-IB.
-- Source/collection fields when explicitly supplied by Group-IB.
-- Threat-actor fields when explicitly supplied by Group-IB.
-- Target domain/service fields when explicitly supplied by Group-IB.
-- Quick View summary.
-- Professional bar charts based only on actual provider data.
-- Deterministic evidence-based daily assessment with explicit activity level, confidence, facts, observations, assessment basis and analyst-attention items.
-- Provider timestamp normalization for report presentation.
-- Server/local PDF generation.
-
-### Explicitly out of scope
-- ThreatForge functionality.
-- General-purpose CTI case management.
-- Large React/Next.js dashboard.
-- FastAPI service.
-- Redis workers.
-- PostgreSQL as a mandatory dependency.
-- User authentication/RBAC for a single-operator local utility.
-- Browser-to-Group-IB integration.
-- Fabricated attribution, sources, or dark-web intelligence.
-- Complex investigation UI.
-
-The architecture may evolve if the project owner explicitly expands scope.
-
-## Classification Model
-
-### NEW
-A normalized compromise that has no matching underlying compromise identity in local history and is within the configured daily/newness policy.
-
-### OLD / HISTORICAL
-A compromise already known to local history, or a compromise whose provider timeline clearly predates the configured newness policy, and which does not represent a newly discovered underlying compromise.
-
-A record being returned by Group-IB today does **not** by itself make it NEW.
-
-### RESEEN / RECYCLED
-This is an internal processing concept when a known compromise is returned again. For the daily report, it should be grouped with the historical/known population unless the project owner explicitly requests a separate section.
-
-### REPEAT
-The same provider observation/event already processed during the current or a prior retrieval. It must not create duplicate local history.
-
-The classification decision must be deterministic and explainable from stored identity/timeline fields.
-
-## Timeline Requirements
-Where Group-IB provides them, preserve:
-- dateFirstCompromised
-- dateLastCompromised
-- dateFirstSeen
-- dateLastSeen
-
-Also maintain local:
-- first locally observed
-- last locally observed
-
-The report must clearly distinguish provider timeline fields from local observation timestamps.
-
-## Data Integrity
-The local history store is the durable basis for daily NEW-vs-OLD classification.
-
-Identity must not be based only on a timestamp. The implementation must define a deterministic normalized compromise identity using available provider/account/domain/event identifiers and document the fallback behavior when fields are absent.
-
-Repeated provider records must update history rather than blindly create new logical compromises.
-
-## Provider Contract
-Group-IB authentication, endpoints, parameters, pagination/incremental retrieval and response fields must be verified before production client implementation.
-
-The existing `tools/groupib_contract_probe.py` is a bounded schema probe. It must not print or persist credentials or response values.
-
-Do not claim a provider field exists unless it is supported by verified documentation or observed runtime schema.
+## Data Integrity and History
+- Reuse the existing `groupib/`, `storage/`, and `reporting/` logic where possible.
+- Preserve deterministic identities and observation fingerprints; never fingerprint or log plaintext passwords.
+- History mutation must be transactional and repeat-safe.
+- Do not classify/export a supposedly complete result if provider pagination failed. Indicate partial/failed retrieval explicitly.
+- Never replace provider First Seen / Last Seen with local observation timestamps; display local observation times separately when needed.
+- Maintain consistent source provenance from collection to table and exported report.
 
 ## Security
 - Never commit Group-IB credentials.
 - Never print API tokens or authorization headers.
-- Never write tokens into reports.
-- Show account/email identifiers in full when required for operational report correlation.
-- Include the provider-supplied login/password fields in the operational PDF because the project owner explicitly requested credential visibility. Never include Group-IB API tokens or session cookies.
-- Do not fabricate unavailable source, actor, malware, or dark-web data.
-- Keep `.env` ignored by Git.
+- Never write API tokens, session cookies or auth headers into reports.
+- Keep `.env`, local databases, exports, reports and generated runtime data Git-ignored as appropriate.
+- Validate date ranges and domain filters on the backend; parameterize database queries.
+- Prevent arbitrary filesystem paths from client input.
+- Render provider-supplied strings as escaped text; never inject them as HTML.
+- Use safe generic errors in HTTP responses while preserving non-sensitive operator diagnostics.
+- Bind to 127.0.0.1 by default. Do not expose the app on a LAN/public interface without an explicit future security design.
+- Minimize credential exposure. Mask account identifiers by default where practical. Do not include plaintext passwords in dashboard output or exports by default.
 
-## Reporting Requirements
-The daily PDF should be concise and operational.
-
-### Quick View
-- report date
-- total records processed
-- NEW compromises
-- OLD/HISTORICAL records
-- infostealer record count when available
-- other verified high-value daily metrics
-
-### Charts
-Use a restrained set of professional bar-chart panels:
-- infostealer family distribution;
-- source/collection distribution;
-- target-domain distribution when useful.
-
-The current layout intentionally combines infostealer families and sources into one boxed panel and keeps target domains in a separate boxed panel. The previous NEW-vs-OLD chart is omitted.
-
-Do not create charts for unavailable or fabricated fields.
-
-### NEW Compromises
-Include a table with useful fields such as:
-- full account/email identifier for operational correlation
-- domain
-- compromised date (PHT)
-- date detected (PHT)
-- first seen (PHT)
-- last seen (PHT)
-- victim's login
-- password
-- victim IP
-- source
-- color-coded stealer / malware
-- threat actor
-- Source Link as the final column
-
-Only include fields actually available.
-
-### OLD / HISTORICAL
-Keep this separate from NEW and include:
-- full account/email identifier
-- domain
-- compromised date (PHT)
-- date detected (PHT)
-- first seen (PHT)
-- last seen (PHT)
-- victim's login
-- password
-- victim IP
-- source
-- color-coded stealer / malware
-- Source Link as the final column
-
-### Monitoring Window
-The report covers the **previous 24 hours ending at the exact time the script runs**, in Philippines Time (Asia/Manila).
-
-Example:
-
-```
-Script run:    Sep 25, 2026 11:13 AM PHT
-Window start:  Sep 24, 2026 11:13 AM PHT
-Window end:    Sep 25, 2026 11:13 AM PHT
-```
-
-For the user's daily-report requirement, the PDF reporting window remains the previous 24 hours through the current run, but provider acquisition uses a separate bounded latest-data lookback. The default is 30 days, retrieved with the documented Group-IB collection endpoint using `df` / `dt` and `resultId` pagination. Records are sorted newest-first by `dateLastSeen` with `dateFirstSeen` fallback. NEW records must visibly include First Seen and Last Seen. The 24-hour report window must not be used to discard current provider records solely because their First Seen/Last Seen timeline is older. Sequence-based retrieval remains available as the verified incremental/provider-current diagnostic mechanism.
-
-### Provider Lookback Boundary
-
-The PDF reporting window and provider acquisition window are deliberately separate.
-
-```text
-PDF report window:        exact previous 24 hours
-Provider latest lookback: default 30 days
-```
-
-Configure the provider lookback with:
-
-```bash
-GROUP_IB_LATEST_LOOKBACK_DAYS=30
-```
-
-The application must reject values greater than 30 days for this collection retrieval path. Provider results are paginated with `resultId` and sorted newest-first by `dateLastSeen`, with `dateFirstSeen` as fallback.
-
-## Reporting File Convention
-Reports should be generated automatically as:
-
-```
-reports/GIB_DailyReport_YYYY-MM-DD_HHMM.pdf
-```
+## Export Requirements
+- PDF and CSV output must reflect the exact currently selected date, source category, domain and temporal classifications.
+- Export metadata: generated-at timestamp, query/filter definitions, Group-IB API source, collection-completion state, number of returned/exported records, and source timestamp used for sorting.
+- PDF reports must state that assessment is an initial deterministic analyst aid, not proof of active access or a definitive severity verdict.
+- Do not label a report complete if pagination or normalization is incomplete.
+- Escape CSV values that could be interpreted as spreadsheet formulas (e.g. values beginning with =, +, -, or @).
 
 ## Permanent Development Loop
 Every cycle MUST follow:
-1. Fetch CURRENT latest `main`.
-2. Deep-inspect the actual repository.
-3. Identify the highest-priority unfinished work.
-4. State internally what needs to change.
-5. Implement the smallest production-grade surgical change.
-6. Validate with executable checks.
-7. Re-inspect affected files/contracts.
-8. Commit validated work to `main`.
-9. Record phase, validation, limitations and next gate.
-10. Repeat from the new current `main`.
+1. Fetch the current remote `main`.
+2. Read `README.md`, `Architecture.md`, and `MasterInstruction.md`.
+3. Deep-inspect the actual affected implementation and tests.
+4. Identify the highest-priority unfinished gate.
+5. Implement the smallest coherent production-grade change.
+6. Run executable tests and applicable lint/build checks.
+7. Re-inspect changed code and contracts.
+8. Commit directly to `main` only after validation, preserving fast-forward history.
+9. Fetch remote `main` again and verify the resulting commit SHA.
+10. Report exact changed files, validation evidence, verified SHA, limitations, and next gate.
 
-### Non-negotiable rules
+## Change Discipline
 - GitHub `main` is the only source of truth.
-- Never rely on stale snapshots, old SHAs, screenshots or previous diagnoses when current code can be inspected.
-- Do not rewrite whole files unless genuinely necessary.
-- No mock/fake intelligence presented as real.
-- No unrelated dependencies or cleanup.
-- Resolve root causes rather than symptoms.
-- Runtime validation is required where applicable.
-- Never request or expose the user's Group-IB secret.
+- No feature branches, pull requests, force pushes or history rewriting unless explicitly requested by the project owner.
+- Never trust stale SHAs or old snapshots when current main can be fetched.
+- Do not rewrite existing working modules unnecessarily.
+- No fake/mock intelligence presented as real.
+- Do not expand dependencies without justification.
+- Fix test/build/runtime failures before moving to the next gate.
+- Keep the existing CLI and PDF behavior working as regression requirements.
 
-### Daily Operational Delta & Run Integrity
+## Architecture Gates
+- W1 — Scope and architecture updated from CLI-only/PDF-only tool to Windows local web dashboard — documentation gate.
+- W2 — Local web server shell and secure static dashboard delivery.
+- W3 — Dashboard read model backed by existing normalization/history and verified Group-IB acquisition.
+- W4 — Date/domain/source/category filters, newest-first sorting, pagination completeness and data-quality presentation.
+- W5 — NEW / RECYCLED / OLD / UNVERIFIED temporal classification validated against deterministic tests and actual source semantics.
+- W6 — Evidence-based initial assessment with explicit confidence and limits.
+- W7 — Filter-faithful PDF and safe CSV exports with provenance.
+- W8 — Windows launch/run instructions, regression checks and end-to-end validation.
 
-The reporting engine should calculate, when a previous successful run exists:
-- newly affected target domains.
+Current next gate: **W1 — update and align architecture documentation on main**. Do not claim web dashboard or live API validation is complete until implemented and verified.
 
-Daily-delta values remain available to the assessment engine, but the standalone Daily Delta panel is intentionally omitted from the PDF presentation.
-
-The first successful run establishes the comparison baseline. A failed PDF generation must not be persisted as a successful daily-run baseline.
-
-The report should also expose collection/data-quality metadata derived from the actual pipeline:
-- records retrieved;
-- records normalized;
-- records classified;
-- normalization error state;
-- report generation status;
-- run identifier;
-- timezone.
-
-These are operational metrics, not fabricated intelligence.
-
-### Automated Validation
-
-The repository should maintain an automated unit-test gate for pushes to `main` and pull requests. Provider integration remains a separate runtime validation step and must not require secrets in CI.
-
-
-## Phase Gates
-
-### PHASE 1 — Focused Daily-Monitoring Architecture
-Define and validate the reduced scope, one-command workflow, local history model and PDF/report structure.
-
-### PHASE 2 — Group-IB Runtime Contract
-Complete authentication and response-schema verification using the bounded probe.
-
-**Status: COMPLETE.** Runtime verification succeeded with HTTP 200 using the configured Group-IB Personal Token. The observed response contract includes integer `count` and `seqUpdate`, an `items` array, and the documented/observed compromise, event, malware, source, service and timeline structures.
-
-### PHASE 3 — Daily Retrieval & Normalization
-Implement the verified Group-IB client and canonical daily record model.
-
-**Status: COMPLETE.** The verified client uses Basic authentication and the verified `compromised/account_group/updated` endpoint. Provider responses are validated before normalization. Canonical records use provider record identity when available and a deterministic SHA-256 fallback otherwise. Provider-supplied login/password fields are retained for the explicitly requested operational report; API tokens and session cookies remain excluded.
-
-Sequence-based incremental retrieval is verified and implemented as a separate provider-update path. The daily report uses the bounded collection endpoint with a default 30-day lookback because the operational requirement is the current/latest account population, not merely accounts whose provider update sequence advanced during the last 24 hours. Returned records are not discarded using `dateLastSeen` / `dateFirstSeen` as an update-time filter.
-
-### PHASE 4 — Local History & NEW/OLD Classification
-Implement deterministic identity, first/last local observation and repeat-safe classification.
-
-**Implementation complete; local executable validation pending.** SQLite history and deterministic NEW / OLD/HISTORICAL / RESEEN/RECYCLED / REPEAT classification are implemented, including durable provider timeline bounds and repeat-safe upserts.
-
-After Phase 4 validation, the next gates are Phase 5 — Quick View & Professional Bar Charts, then Phase 6 — One-Command PDF Reporting & Presentation.
-
-### PHASE 5 — Quick View & Professional Bar Charts
-**Status: IMPLEMENTED.** Build the report summary and data-driven color bar-chart panels from actual provider data.
-
-### PHASE 6 — One-Command PDF Reporting & Presentation
-**Status: IMPLEMENTED.** Connect retrieval, classification, summary and professional ReportLab PDF generation behind `python daily_report.py`, including boxed charts, full account correlation, Asia/Manila timestamp presentation, Executive Summary, evidence-based Daily Threat Assessment, newly affected domains, seven-day total/average, and run/data-quality metadata.
-
-### PHASE 7 — End-to-End Validation & Assessment
-Validate repeated runs, old-record handling, new-record detection, report generation, credential visibility policy, latest-provider-data acquisition, daily-run baseline persistence, failure behavior, and deterministic evidence-based assessment output.
-
-**Current active gate:** execute the repository unit-test gate and then perform the real `python daily_report.py` runtime validation against the configured Group-IB account. Confirm the assessment is populated from actual metrics, the first successful run reports limited confidence because no baseline exists, and the second successful run produces both a meaningful Daily Delta and baseline-aware assessment.
-
-## Completion Standard
-A phase is complete only when implementation and validation evidence exist. After each gate document:
-- completed changes,
-- validation evidence,
-- current phase,
-- known limitations,
+## Reporting Standard
+Every development response states:
+- gate addressed;
+- actual changes;
+- tests executed and results;
+- commit SHA and current remote main SHA if a push happened;
+- live Group-IB validation status;
 - next highest-priority gate.
