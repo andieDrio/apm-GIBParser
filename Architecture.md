@@ -44,8 +44,6 @@ The browser must never call Group-IB directly. The browser must never receive th
 - `tools/groupib_contract_probe.py`: bounded runtime schema probe that reports field names/types without printing response values.
 - `daily_report.py`: existing command-line daily report path.
 
-Before changing these modules, fetch latest main and inspect implementation/tests.
-
 ## Provider Contract Boundary
 The repository currently documents and implements:
 - base URL: `https://tap.group-ib.com/api/v2/`;
@@ -54,7 +52,17 @@ The repository currently documents and implements:
 - `sequence_list` and `compromised/account_group/updated` sequence-based update retrieval;
 - strict validation of returned envelope and bounded pagination.
 
-This is existing repository evidence, not a claim of a new live API test in this session. Revalidate with `tools/groupib_contract_probe.py` and `tools/groupib_latest_data_probe.py` on the user's configured Windows machine before relying on live dashboard results. Any endpoint/query parameter specific to Unique vs Combolist must be verified from current source docs/runtime schema before implementation.
+The operator successfully ran the bounded contract probe against `GET /api/v2/compromised/account_group/updated`: HTTP 200, one item at limit 1, JSON object envelope with integer `count` and `seqUpdate`, and an `items` array. Observed item fields include account login, parsed login domain, first/last seen, event-level detected/compromised timestamps, source, malware, evaluation metadata, and a password field. The probe prints only field names/types, not values.
+
+This validates authentication and the observed updated-feed schema for one bounded request only. It does not validate full pagination, the collection slice, or Unique/Combolist filters. Revalidate those before implementing category filters. Do not treat `count` as the total population without confirming endpoint semantics.
+
+## Dashboard Shell (W2)
+- Entry point: `python web_dashboard.py`.
+- Serves `web/index.html` and `/api/health` using Python's standard library.
+- Fixed bind address `127.0.0.1`, port `8765`; no LAN/public bind option.
+- Security headers include a restrictive same-origin Content Security Policy, no-sniff, no-referrer, frame denial, and no-store.
+- Health response exposes only whether local credentials are configured; it never returns username/token and does not claim to have queried Group-IB.
+- Dashboard shell contains no fake account data. Filters/metrics/exports remain visibly unavailable until W3+ is implemented.
 
 ## Dashboard Read Model
 The dashboard exposes only data backed by:
@@ -72,7 +80,7 @@ Never synthesize record values when fields are absent. Render missing values as 
 - Victim domain: exact normalized domain filter and domain grouping.
 - Source category: Unique / Combolist only where confirmed to be in actual provider contract.
 - Temporal label: NEW / RECYCLED / OLD / UNVERIFIED.
-- Newest-first order by a selectable and explicitly labelled source timestamp, defaulting to `dateLastSeen` and falling back to `dateFirstSeen` only when Last Seen is unavailable.
+- Newest-first order by an explicitly labelled source timestamp, defaulting to `dateLastSeen` and falling back to `dateFirstSeen` only when Last Seen is unavailable.
 - Provider timestamps remain immutable and distinct from first/last local observation times.
 - Partial collection, API errors, normalization warnings and last refresh time are visible.
 
@@ -104,7 +112,7 @@ Assessment is deterministic and generated from observed record counts, affected 
 ## Security and Data Handling
 - Group-IB credentials remain in local `.env` / backend settings, never in frontend code or browser responses.
 - Keep `.env`, DB files, exported CSV/PDF, and runtime data out of Git.
-- Bind only to loopback by default.
+- Bind to loopback by default.
 - Validate and bound all date/filter/pagination inputs.
 - Parameterize SQLite queries.
 - Escape provider-controlled data in HTML.
@@ -121,13 +129,13 @@ The local web dashboard must not break:
 - local history compatibility.
 
 ## Architecture Gates
-- W1: architecture and permanent instructions aligned to dashboard scope.
-- W2: local web application shell with loopback-only serving.
-- W3: dashboard read model using existing client/normalizer/history.
-- W4: date/domain/source filters, newest-first ordering and collection integrity.
-- W5: classifications verified with deterministic tests.
-- W6: initial evidence-based assessment.
-- W7: safe PDF/CSV exports.
-- W8: Windows launch and end-to-end regression validation.
+- W1 — documentation aligned to approved Windows dashboard scope — **COMPLETE**.
+- W2 — local web application shell with loopback-only serving and non-secret health endpoint — **IMPLEMENTED; automated validation pending CI**.
+- W3 — dashboard read model using existing client/normalizer/history.
+- W4 — date/domain/source filters, newest-first ordering and collection integrity.
+- W5 — classifications verified with deterministic tests.
+- W6 — initial evidence-based assessment.
+- W7 — safe PDF/CSV exports.
+- W8 — Windows launch and end-to-end regression validation.
 
-Current gate: W1. Live Group-IB access is not validated by documentation review alone.
+Current gate: W2 validation and then W3. Live Group-IB access is validated only for the bounded updated-feed request described above.

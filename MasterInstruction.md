@@ -48,8 +48,8 @@ The app is a read-only monitoring and reporting interface. It must not alter Gro
 - Support Windows 10/11 local execution and browser access via localhost. Bind to loopback by default, not a public network interface.
 
 ## Stack Direction
-- Backend: existing Python codebase, FastAPI for local HTTP routes only if compatible with project dependencies and selected implementation.
-- Frontend: lightweight web UI. Prefer a small static HTML/CSS/JavaScript dashboard served by the backend for the first increment; do not add a large frontend framework without a demonstrated need.
+- Backend: existing Python codebase; keep the first local HTTP server dependency-free where practical.
+- Frontend: lightweight static HTML/CSS/JavaScript dashboard served by the backend; do not add a large frontend framework without a demonstrated need.
 - Persistence: preserve existing SQLite durable history.
 - PDF: preserve existing ReportLab report pipeline and add dashboard-filtered export in a controlled way.
 - Credentials: existing local .env and server-side configuration only.
@@ -58,8 +58,8 @@ The app is a read-only monitoring and reporting interface. It must not alter Gro
 ## Official Group-IB API Contract
 - Use the existing Group-IB client and verified contract as the starting point; do not replace it with a guessed endpoint.
 - The repository records a verified Personal Token authentication model and bounded Group-IB collection/sequence-update endpoints. Reinspect current source and tests before any API contract change.
-- Revalidate the current contract with the safe bounded `tools/groupib_contract_probe.py` when the operator runs it locally with their credentials.
-- API access has not been live-tested in the present development session. Do not claim a new live verification result without actual HTTP response evidence.
+- Live bounded contract probe returned HTTP 200 from `GET /api/v2/compromised/account_group/updated`, with one item at limit 1 and a JSON object containing integer `count`, integer `seqUpdate`, and an `items` array. Observed schema includes login, parsedLogin.domain, first/last seen timestamps, event detected/compromised dates, source, malware, evaluation and a password field.
+- This validates the observed updated-feed response only. Collection-slice pagination and Unique/Combolist query semantics remain unverified.
 - Respect existing pagination guards, timeout/error handling and rate limits.
 - Never print or persist real credentials or raw response values in diagnostic output; report field names/types only.
 
@@ -126,16 +126,16 @@ Every cycle MUST follow:
 - Keep the existing CLI and PDF behavior working as regression requirements.
 
 ## Architecture Gates
-- W1 — Scope and architecture updated from CLI-only/PDF-only tool to Windows local web dashboard — documentation gate.
-- W2 — Local web server shell and secure static dashboard delivery.
-- W3 — Dashboard read model backed by existing normalization/history and verified Group-IB acquisition.
-- W4 — Date/domain/source/category filters, newest-first sorting, pagination completeness and data-quality presentation.
+- W1 — scope and architecture documentation aligned to approved Windows dashboard — **COMPLETE**.
+- W2 — local web server shell, safe static dashboard delivery, loopback-only binding and non-secret health endpoint — **IMPLEMENTED; CI validation pending**.
+- W3 — dashboard read model backed by existing normalization/history and verified Group-IB acquisition.
+- W4 — date/domain/source/category filters, newest-first sorting, pagination completeness and data-quality presentation.
 - W5 — NEW / RECYCLED / OLD / UNVERIFIED temporal classification validated against deterministic tests and actual source semantics.
-- W6 — Evidence-based initial assessment with explicit confidence and limits.
-- W7 — Filter-faithful PDF and safe CSV exports with provenance.
+- W6 — evidence-based initial assessment with explicit confidence and limits.
+- W7 — filter-faithful PDF and safe CSV exports with provenance.
 - W8 — Windows launch/run instructions, regression checks and end-to-end validation.
 
-Current next gate: **W1 — update and align architecture documentation on main**. Do not claim web dashboard or live API validation is complete until implemented and verified.
+Current next gate: **W2 automated validation, then W3 provider-backed read model**. Do not claim web dashboard or complete live data collection is done until implemented and verified.
 
 ## Reporting Standard
 Every development response states:
@@ -144,4 +144,4 @@ Every development response states:
 - tests executed and results;
 - commit SHA and current remote main SHA if a push happened;
 - live Group-IB validation status;
-- next highest-priority gate.
+- next gate.
