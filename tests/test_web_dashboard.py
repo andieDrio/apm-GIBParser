@@ -105,6 +105,12 @@ class DashboardHealthTests(unittest.TestCase):
 
         html = (Path(__file__).resolve().parents[1] / "web" / "index.html").read_text(encoding="utf-8")
         self.assertIn('id="new-alert"', html)
+        self.assertIn('class="sidebar"', html)
+        self.assertIn('class="top-nav"', html)
+        self.assertIn('id="notification-bell"', html)
+        self.assertIn('id="enable-notifications"', html)
+        self.assertIn('new Notification("Group-IB: New compromise accounts"', html)
+        self.assertIn('id="notification-popover"', html)
         self.assertIn('el("date-from").addEventListener("change"', html)
         self.assertIn('addEventListener("change",applyFilter)', html)
         self.assertIn('load(true)', html)
