@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Mapping
+import time
 
 import httpx
 
@@ -190,12 +191,32 @@ class GroupIBClient:
         result_id: str | None = None
         seen_result_ids: set[str] = set()
         while True:
-            try:
-                response = self._client.get(url, params=params)
-            except httpx.TimeoutException as exc:
-                raise GroupIBRequestError("Group-IB slice request timed out.") from exc
-            except httpx.HTTPError as exc:
-                raise GroupIBRequestError("Group-IB slice request failed.") from exc
+            response = None
+            last_error: httpx.HTTPError | None = None
+            for attempt in range(3):
+                try:
+                    response = self._client.get(url, params=params)
+                    last_error = None
+                    break
+                except httpx.TimeoutException as exc:
+                    last_error = exc
+                except httpx.HTTPError as exc:
+                    last_error = exc
+                if attempt < 2:
+                    # GET requests are safe to retry when a transient network/TLS
+                    # failure interrupts collection. Keep retries bounded.
+                    time.sleep(attempt + 1)
+
+            if last_error is not None or response is None:
+                if isinstance(last_error, httpx.TimeoutException):
+                    raise GroupIBRequestError(
+                        "Group-IB slice request timed out after 3 attempts. "
+                        "Check network/VPN connectivity and retry."
+                    ) from last_error
+                raise GroupIBRequestError(
+                    "Group-IB slice request failed after 3 attempts. "
+                    "Check network/VPN connectivity and retry."
+                ) from last_error
 
             self._raise_for_status(response)
             try:
