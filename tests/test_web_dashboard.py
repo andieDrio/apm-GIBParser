@@ -64,6 +64,18 @@ class DashboardHealthTests(unittest.TestCase):
         start, end = _validate_range("2026-10-24", "2026-10-24")
         self.assertLessEqual(start, end)
 
+    def test_dashboard_uses_automatic_filters_and_new_compromise_alert(self) -> None:
+        from pathlib import Path
+
+        html = (Path(__file__).resolve().parents[1] / "web" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('id="new-alert"', html)
+        self.assertIn('addEventListener("change",scheduleDateLoad)', html)
+        self.assertIn('addEventListener("change",applyFilter)', html)
+        self.assertIn('load(true)', html)
+        self.assertNotIn('id="refresh"', html)
+        self.assertNotIn('id="apply"', html)
+        self.assertLess(html.index('const selectedDomain=el("domain").value;'), html.index('if(payload.domains.includes(selectedDomain))'))
+
 
 if __name__ == "__main__":
     unittest.main()
