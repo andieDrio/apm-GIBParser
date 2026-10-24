@@ -56,6 +56,15 @@ class DashboardHealthTests(unittest.TestCase):
         self.assertEqual(_source_category(combo), "Combolist")
         self.assertEqual(_source_category(unknown), "Unmapped")
 
+    def test_dashboard_metric_cards_are_not_tied_to_table_drilldown_filters(self) -> None:
+        from pathlib import Path
+
+        source = (Path(__file__).resolve().parents[1] / "web_dashboard.py").read_text(encoding="utf-8")
+        self.assertIn("metric_pairs = []", source)
+        self.assertIn("metric_pairs.append((record, classification))", source)
+        self.assertIn("metric_classifications,", source)
+        self.assertIn("for category in (\"Unique\", \"Combolist\", \"Unmapped\")", source)
+
     def test_clickable_metric_filter_matches_recycled_old_and_repeat(self) -> None:
         self.assertTrue(_classification_matches("recycled-old", "RESEEN/RECYCLED"))
         self.assertTrue(_classification_matches("recycled-old", "OLD/HISTORICAL"))

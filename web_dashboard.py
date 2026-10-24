@@ -233,6 +233,7 @@ def _filtered_payload(query: dict[str, list[str]]) -> dict[str, Any]:
         raise ValueError("page must be positive and page_size must be between 1 and 200.")
 
     pairs = []
+    metric_pairs = []
     for record, classification in zip(_snapshot["records"], _snapshot["classifications"]):
         stamp = _timestamp(record)
         if stamp is None or not start <= stamp <= end:
@@ -240,6 +241,9 @@ def _filtered_payload(query: dict[str, list[str]]) -> dict[str, Any]:
         domain = record.domain or record.service_domain or ""
         if domain_filter and domain.casefold() != domain_filter:
             continue
+        # Summary cards stay scoped to the chosen date range and domain, not
+        # to the table's category/classification drill-down.
+        metric_pairs.append((record, classification))
         category = _source_category(record).casefold()
         if source_filter != "all" and category != source_filter:
             continue
@@ -258,11 +262,13 @@ def _filtered_payload(query: dict[str, list[str]]) -> dict[str, Any]:
     page_pairs = pairs[(page - 1) * page_size:page * page_size]
     records = tuple(pair[0] for pair in pairs)
     classifications = tuple(pair[1] for pair in pairs)
+    metric_records = tuple(pair[0] for pair in metric_pairs)
+    metric_classifications = tuple(pair[1] for pair in metric_pairs)
     report_end = end
     metrics = build_quick_view(
         date_to,
-        classifications,
-        records,
+        metric_classifications,
+        metric_records,
         report_end=report_end,
         previous_run=None,
     )
@@ -277,7 +283,7 @@ def _filtered_payload(query: dict[str, list[str]]) -> dict[str, Any]:
     )
     category_counts = {
         category: sum(_source_category(record).casefold() == category.casefold()
-                      for record in records)
+                      for record in metric_records)
         for category in ("Unique", "Combolist", "Unmapped")
     }
     return {
