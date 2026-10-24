@@ -81,6 +81,19 @@ class HistoryClassificationTests(unittest.TestCase):
                 self.assertEqual(first.classification, NEW)
                 self.assertEqual(second.classification, NEW)
 
+    def test_new_account_ages_to_historical_after_seven_day_window(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with HistoryStore(Path(directory) / "history.db") as store:
+                record = make_record()
+                first = classify_record(store, record, observed_at=OBSERVED_AT)
+                after_window = classify_record(
+                    store,
+                    record,
+                    observed_at=datetime(2026, 10, 4, 2, 0, tzinfo=timezone.utc),
+                )
+                self.assertEqual(first.classification, NEW)
+                self.assertEqual(after_window.classification, OLD)
+
     def test_changed_known_observation_is_reseen(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             with HistoryStore(Path(directory) / "history.db") as store:
