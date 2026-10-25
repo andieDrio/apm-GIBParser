@@ -29,6 +29,10 @@ class GroupIBAuthenticationError(GroupIBClientError):
 class GroupIBRateLimitError(GroupIBClientError):
     """Group-IB rate-limited the request."""
 
+    def __init__(self, message: str, retry_after_seconds: int = 60) -> None:
+        super().__init__(message)
+        self.retry_after_seconds = max(1, min(int(retry_after_seconds), 3600))
+
 
 class GroupIBSchemaError(GroupIBClientError):
     """The provider response does not match the verified contract."""
@@ -273,7 +277,15 @@ class GroupIBClient:
                 "Group-IB authentication or authorization was rejected."
             )
         if response.status_code == 429:
-            raise GroupIBRateLimitError("Group-IB API rate limit was reached.")
+            retry_after = response.headers.get("Retry-After", "")
+            try:
+                retry_seconds = int(retry_after)
+            except (TypeError, ValueError):
+                retry_seconds = 60
+            raise GroupIBRateLimitError(
+                f"Group-IB API rate limit was reached. Retry after about {max(1, min(retry_seconds, 3600))} seconds.",
+                retry_after_seconds=retry_seconds,
+            )
         if response.is_error:
             raise GroupIBRequestError(
                 f"Group-IB API returned HTTP {response.status_code}."
