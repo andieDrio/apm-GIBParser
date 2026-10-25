@@ -196,6 +196,7 @@ def _load_snapshot(date_from: str, date_to: str) -> dict[str, Any]:
     # operator-selected ranges without silently leaving an older snapshot on
     # screen when a range exceeds one provider slice.
     provider_items: dict[str, Any] = {}
+    retrieved_count = 0
     cursor = start
     with GroupIBClient(
         config.username,
@@ -215,6 +216,7 @@ def _load_snapshot(date_from: str, date_to: str) -> dict[str, Any]:
                 date_to=chunk_end_utc,
                 limit=500,
             )
+            retrieved_count += len(response.items)
             for item in response.items:
                 normalized_item = normalize_response((item,))
                 if not normalized_item:
