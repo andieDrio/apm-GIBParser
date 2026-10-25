@@ -7,7 +7,7 @@ A local, single-operator Windows web dashboard being built by extending the exis
 - W1 documentation scope alignment: complete.
 - W2 local dashboard shell: complete.
 - W3 provider-backed read model and automatic-filter UI: implemented; automated validation pending.
-- The dashboard loads Group-IB records automatically on startup. Date changes automatically re-filter the loaded snapshot or query Group-IB when the selected range extends beyond it; domain, source, classification and page-size filters apply without manual buttons. Date filtering and newest-first sorting use Compromised Date, falling back to Last Compromised, Date Detected, then First Seen. Last Seen is activity metadata only and does not determine the date range. An in-app alert and highlighted rows identify records classified NEW. The table displays provider timeline fields. CSV/PDF exports include all filtered records rather than only the visible page. The dashboard remains bound to loopback only.
+- The dashboard loads a fresh Group-IB snapshot on startup, whenever the date range changes, and every five minutes while the browser tab is visible. Domain, source, classification and page-size filters reuse the latest snapshot. Date filtering and newest-first sorting use Compromised Date, falling back to Last Compromised, Date Detected, then First Seen. Last Seen is activity metadata only and does not determine the date range. An in-app alert and highlighted rows identify records classified NEW. The table displays provider timeline fields. CSV/PDF exports include all filtered records rather than only the visible page. The dashboard remains bound to loopback only.
 - Unique/Combolist counts only match exact source labels; unknown values remain Unmapped. Validate source semantics before treating those category counts as authoritative.
 
 ## Start the local dashboard shell
@@ -36,6 +36,7 @@ Use the repository's local `.env` file and existing `GROUP_IB_USERNAME` plus `GR
 ## Dashboard target capabilities
 - Filters for last 7 days, last 30 days, and custom dates.
 - Separate/group/filter by victim domain.
+- NEW requires a valid Compromised Date within the rolling 7-day window (Date First Compromised, falling back only to Date Last Compromised). Last Seen, Date Detected, and First Seen do not qualify an account as NEW. Missing Compromised Date means UNVERIFIED for unknown identities.
 - Newest-first order based on clearly identified Group-IB source timestamp.
 - Preserve Group-IB source categories (Unique / Combolist) independently from NEW / RECYCLED / OLD / UNVERIFIED temporal classification.
 - Display provider timeline fields and missing-data warnings honestly.
