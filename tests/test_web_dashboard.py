@@ -105,9 +105,15 @@ class DashboardHealthTests(unittest.TestCase):
         self.assertEqual(timestamp.month, 10)
         self.assertEqual(timestamp.day, 24)
 
-    def test_date_range_rejects_more_than_30_calendar_days(self) -> None:
+    def test_custom_date_range_over_30_days_is_supported(self) -> None:
+        start, end = _validate_range("2026-09-09", "2026-10-25")
+        self.assertLess(start, end)
+        self.assertEqual(start.day, 9)
+        self.assertEqual(end.day, 25)
+
+    def test_date_range_rejects_more_than_90_calendar_days(self) -> None:
         with self.assertRaises(ValueError):
-            _validate_range("2026-09-01", "2026-10-01")
+            _validate_range("2026-07-27", "2026-10-25")
 
     def test_date_range_accepts_same_day(self) -> None:
         start, end = _validate_range("2026-10-24", "2026-10-24")
