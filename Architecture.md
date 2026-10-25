@@ -74,7 +74,7 @@ Collection is limited to the most recent 30 calendar days per request. Custom ra
 ### Required filters
 - Date preset: last 7 days.
 - Date preset: last 30 days (one month).
-- Custom date range: inclusive date boundary with validation that start <= end; provider collection range is limited to 30 calendar days.
+- Custom date range: inclusive date boundary with validation that start <= end; dashboard selection range is limited to 90 calendar days; each provider slice is limited to 30 days. Malware Family is separately collected from Group-IB over an independent rolling 90-day window, cached for five minutes, and summarized from provider-returned malware family names rather than only records in the selected account date range.
 - Victim domain: exact normalized domain filter and domain grouping.
 - Source category: Unique / Combolist only where confirmed to be in actual provider contract; unknown values remain Unmapped.
 - Temporal label: NEW / RECYCLED / OLD / UNVERIFIED.
