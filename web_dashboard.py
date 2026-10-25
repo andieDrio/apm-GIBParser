@@ -253,7 +253,7 @@ def _load_snapshot(date_from: str, date_to: str) -> dict[str, Any]:
         "date_to": date_to,
         "records": tuple(pair[0] for pair in pairs),
         "classifications": tuple(pair[1] for pair in pairs),
-        "retrieved_count": len(response.items),
+        "retrieved_count": retrieved_count,
         "normalized_count": len(records),
         "collection_complete": True,
     }
