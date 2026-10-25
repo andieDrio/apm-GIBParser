@@ -74,10 +74,20 @@ class DashboardHealthTests(unittest.TestCase):
         source = (root / "web_dashboard.py").read_text(encoding="utf-8")
         html = (root / "web" / "index.html").read_text(encoding="utf-8")
         self.assertIn("MALWARE_INVENTORY_DAYS = 90", source)
+        self.assertIn("MALWARE_INVENTORY_REFRESH_SECONDS = 3600", source)
         self.assertIn("_malware_inventory_lock", source)
         self.assertIn('malware_summary = list(malware_inventory.get("summary") or [])', source)
         self.assertIn("rolling 90 days", html)
         self.assertIn("malware-inventory-meta", html)
+
+    def test_rate_limit_activates_cooldown_and_preserves_last_snapshot(self) -> None:
+        from pathlib import Path
+
+        source = (Path(__file__).resolve().parents[1] / "web_dashboard.py").read_text(encoding="utf-8")
+        self.assertIn("_provider_cooldown_until", source)
+        self.assertIn("No new provider request was sent.", source)
+        self.assertIn("Showing the last successful cached snapshot", source)
+        self.assertIn('payload["provider_warning"] = _provider_warning', source)
 
     def test_clickable_metric_filter_matches_recycled_old_and_repeat(self) -> None:
         self.assertTrue(_classification_matches("recycled-old", "RESEEN/RECYCLED"))
