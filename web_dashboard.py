@@ -164,7 +164,6 @@ def _record_view(record: CanonicalGroupIBRecord, result: ClassificationResult) -
         "last_seen": record.date_last_seen,
         "date_first_compromised": record.date_first_compromised or record.date_last_compromised,
         "date_detected": record.date_detected,
-        "date_first_compromised": record.date_first_compromised,
         "date_last_compromised": record.date_last_compromised,
         "date_detected": record.date_detected,
         "domain": record.domain or record.service_domain or "Not provided",
@@ -261,10 +260,12 @@ def _filtered_payload(query: dict[str, list[str]]) -> dict[str, Any]:
 
     pairs = []
     metric_pairs = []
+    range_pairs = []
     for record, classification in zip(_snapshot["records"], _snapshot["classifications"]):
         stamp = _timestamp(record)
         if stamp is None or not start <= stamp <= end:
             continue
+        range_pairs.append((record, classification))
         domain = record.domain or record.service_domain or ""
         if domain_filter and domain.casefold() != domain_filter:
             continue
@@ -303,11 +304,27 @@ def _filtered_payload(query: dict[str, list[str]]) -> dict[str, Any]:
     all_domains = sorted(
         {
             record.domain or record.service_domain
-            for record in _snapshot["records"]
+            for record, _classification in range_pairs
             if record.domain or record.service_domain
         },
         key=str.casefold,
     )
+    domain_counts: dict[str, int] = {}
+    malware_counts: dict[str, int] = {}
+    for record, _classification in range_pairs:
+        domain_name = record.domain or record.service_domain
+        if domain_name:
+            domain_counts[domain_name] = domain_counts.get(domain_name, 0) + 1
+        for family in record.stealer_families:
+            malware_counts[family] = malware_counts.get(family, 0) + 1
+    domain_summary = [
+        {"name": name, "count": count}
+        for name, count in sorted(domain_counts.items(), key=lambda item: (-item[1], item[0].casefold()))
+    ]
+    malware_summary = [
+        {"name": name, "count": count}
+        for name, count in sorted(malware_counts.items(), key=lambda item: (-item[1], item[0].casefold()))
+    ]
     category_counts = {
         category: sum(_source_category(record).casefold() == category.casefold()
                       for record in metric_records)
@@ -348,6 +365,13 @@ def _filtered_payload(query: dict[str, list[str]]) -> dict[str, Any]:
             "total": len(records),
         },
         "domains": all_domains,
+        "domain_summary": domain_summary,
+        "malware_summary": malware_summary,
+        "new_accounts": [
+            _record_view(record, result)
+            for record, result in range_pairs
+            if result.classification == "NEW"
+        ],
         "records": [_record_view(record, result) for record, result in page_pairs],
         "assessment": {
             "activity_level": assessment.activity_level,
