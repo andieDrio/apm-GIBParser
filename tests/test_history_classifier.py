@@ -244,10 +244,10 @@ class HistoryClassificationTests(unittest.TestCase):
                 )
 
                 self.assertEqual(result.classification, UNVERIFIED)
-                self.assertIn("no valid provider", result.reason)
+                self.assertIn("Compromised Date", result.reason)
                 repeated = classify_record(
                     store,
-                    make_record(first_seen=None, last_seen=None),
+                    make_record(first_seen=None, last_seen=None, compromised=None),
                     observed_at=OBSERVED_AT,
                     newness_window_days=7,
                 )
