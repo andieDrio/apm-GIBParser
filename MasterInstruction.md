@@ -64,12 +64,13 @@ The app is a read-only monitoring and reporting interface. It must not alter Gro
 - Never print or persist real credentials or raw response values in diagnostic output; report field names/types only.
 
 ## Classification and Accuracy
-- NEW means a record has no matching durable identity and passes the documented newness/timeline rules. The current classifier's configured policy remains authoritative until changed with tests.
+- NEW requires a valid provider Compromised Date (dateFirstCompromised, falling back only to dateLastCompromised) within the rolling 7-day window and no matching durable identity. Last Seen, Date Detected, and First Seen must never independently qualify a record as NEW. If no valid Compromised Date exists for an unknown identity, classify it UNVERIFIED.
 - RECYCLED / RESEEN means a previously known identity has resurfaced or changed observation fingerprint according to the existing classifier.
 - OLD / HISTORICAL means provider timeline is outside the configured newness window or local history demonstrates a known record, according to existing classification semantics.
 - UNVERIFIED means required provider timestamps or identity fields are missing/invalid, the source contract is ambiguous, or collection is partial in a way that could change the conclusion.
 - Source categories Unique / Combolist are independent from temporal labels.
-- A record returned today is not automatically new.
+- A record returned today is not automatically new. A recent Last Seen timestamp is account activity metadata and must never qualify an old compromise as NEW.
+- When the operator changes the date range, fetch a fresh provider snapshot for that exact range rather than relying only on a previously loaded in-memory snapshot. Refresh the current view automatically on startup, on date-range changes, and periodically while the dashboard is open; show the provider refresh timestamp and actual retrieved count.
 - A clean/empty query is not evidence the monitored environment is safe.
 - Keep UTC-aware provider timestamps in canonical storage; render local timezone labels clearly (Asia/Manila).
 - Domain grouping uses normalized domain fields but preserves original provider values for provenance.
