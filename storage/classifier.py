@@ -79,15 +79,10 @@ def classify_record(
 
     now = (observed_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
     existing = store.get(record.compromise_identity)
-    provider_newness_time = next(
+    provider_compromise_time = next(
         (
             parsed
-            for value in (
-                record.date_first_compromised,
-                record.date_last_compromised,
-                record.date_detected,
-                record.date_first_seen,
-            )
+            for value in (record.date_first_compromised, record.date_last_compromised)
             if (parsed := _parse_timestamp(value)) is not None
         ),
         None,
@@ -98,42 +93,42 @@ def classify_record(
     # local-history state. In particular, a changed observation fingerprint
     # or a recent Last Seen value must never keep an old compromise classified
     # as NEW/RESEEN. Last Seen is activity metadata, not compromise age.
-    if provider_newness_time is not None and provider_newness_time < cutoff:
+    if provider_compromise_time is not None and provider_compromise_time < cutoff:
         classification = OLD
         reason = "Provider compromise/detection timeline predates the configured newness window; recent last-seen activity does not make it new."
     elif existing is not None:
         first_local_seen = _parse_timestamp(existing.first_local_seen)
         same_observation = existing.last_observation_fingerprint == record.observation_fingerprint
-        if existing.last_classification == UNVERIFIED and provider_newness_time is None:
+        if existing.last_classification == UNVERIFIED and provider_compromise_time is None:
             classification = UNVERIFIED
             reason = "Identity has no valid provider timeline; manual review remains required."
         elif not same_observation:
             classification = RESEEN
             reason = "Durable identity exists but the provider observation changed."
-        elif provider_newness_time is not None and provider_newness_time >= cutoff and first_local_seen is not None and first_local_seen >= cutoff:
+        elif provider_compromise_time is not None and provider_compromise_time >= cutoff and first_local_seen is not None and first_local_seen >= cutoff:
             classification = NEW
             reason = "Identity was first discovered within the newness window; unchanged refreshes preserve NEW status."
         else:
             classification = REPEAT
             reason = "Durable identity exists and observation fingerprint is unchanged."
     else:
-        if provider_newness_time is None:
+        if provider_compromise_time is None:
             classification = UNVERIFIED
             reason = (
-                "No durable identity exists and no valid provider compromise/"
-                "detection/first-seen timestamp is available."
+                "No durable identity exists and no valid Compromised Date is available; "
+                "Last Seen, Date Detected, and First Seen cannot qualify a record as NEW."
             )
-        elif provider_newness_time < cutoff:
+        elif provider_compromise_time < cutoff:
             classification = OLD
             reason = (
-                "No durable identity exists, but the provider compromise/detection "
-                "timeline predates the configured newness window."
+                "The provider Compromised Date predates the configured newness window; "
+                "recent Last Seen activity does not make it new."
             )
         else:
             classification = NEW
             reason = (
-                "No durable identity exists and a valid provider compromise/"
-                "detection timeline is within the configured newness policy."
+                "The provider Compromised Date is within the configured newness policy "
+                "and no durable identity match exists."
             )
 
     history = store.record_observation(
