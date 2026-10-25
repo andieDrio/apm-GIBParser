@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import unittest
 
+import httpx
+
 from groupib.client import (
     GroupIBClient,
     GroupIBConfigurationError,
+    GroupIBRateLimitError,
     GroupIBSchemaError,
 )
 
@@ -44,6 +47,18 @@ class GroupIBClientTests(unittest.TestCase):
         self.assertEqual(response.count, 1)
         self.assertEqual(response.result_id, "slice-001")
         self.assertEqual(response.items[0]["id"], "record-001")
+
+    def test_rate_limit_respects_retry_after_header(self) -> None:
+        response = httpx.Response(429, headers={"Retry-After": "120"})
+        with self.assertRaises(GroupIBRateLimitError) as caught:
+            GroupIBClient._raise_for_status(response)
+        self.assertEqual(caught.exception.retry_after_seconds, 120)
+
+    def test_rate_limit_uses_safe_default_for_invalid_retry_after(self) -> None:
+        response = httpx.Response(429, headers={"Retry-After": "later"})
+        with self.assertRaises(GroupIBRateLimitError) as caught:
+            GroupIBClient._raise_for_status(response)
+        self.assertEqual(caught.exception.retry_after_seconds, 60)
 
     def test_rejects_invalid_top_level_contract(self) -> None:
         with self.assertRaises(GroupIBSchemaError):
