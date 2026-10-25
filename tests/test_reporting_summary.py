@@ -30,6 +30,7 @@ def make_record(
         "id": record_id,
         "login": login,
         "dateFirstSeen": first_seen,
+        "dateFirstCompromised": first_seen,
         "dateLastSeen": first_seen,
         "events": [{"id": event_id}],
         "sourceType": [source_type],
