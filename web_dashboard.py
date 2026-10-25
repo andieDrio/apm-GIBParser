@@ -52,6 +52,11 @@ SECURITY_HEADERS = {
 
 _snapshot_lock = threading.Lock()
 _snapshot: dict[str, Any] | None = None
+_malware_inventory_lock = threading.Lock()
+_malware_inventory: dict[str, Any] | None = None
+_malware_inventory_refreshed_at: datetime | None = None
+MALWARE_INVENTORY_DAYS = 90
+MALWARE_INVENTORY_REFRESH_SECONDS = 300
 
 
 def build_health_payload(config: AppConfig | None = None) -> dict[str, Any]:
@@ -185,6 +190,7 @@ def _record_view(record: CanonicalGroupIBRecord, result: ClassificationResult) -
 
 
 def _load_snapshot(date_from: str, date_to: str) -> dict[str, Any]:
+    global _malware_inventory, _malware_inventory_refreshed_at
     config = AppConfig.from_environment()
     if not config.has_credentials():
         raise ValueError("Group-IB credentials are missing. Check local .env configuration.")
@@ -226,6 +232,61 @@ def _load_snapshot(date_from: str, date_to: str) -> dict[str, Any]:
                 provider_items[key] = item
             cursor = chunk_end + timedelta(seconds=1)
 
+        # Malware Family is a provider inventory, not a date-filtered dashboard
+        # metric. Refresh it from Group-IB's own compromised-account records
+        # over an independent rolling 90-day window, cached for five minutes.
+        with _malware_inventory_lock:
+            inventory_is_stale = (
+                _malware_inventory is None
+                or _malware_inventory_refreshed_at is None
+                or (datetime.now(timezone.utc) - _malware_inventory_refreshed_at).total_seconds()
+                >= MALWARE_INVENTORY_REFRESH_SECONDS
+            )
+            if inventory_is_stale:
+                inventory_end = datetime.now(PHILIPPINES_TZ)
+                inventory_start = (
+                    inventory_end - timedelta(days=MALWARE_INVENTORY_DAYS)
+                ).replace(hour=0, minute=0, second=0, microsecond=0)
+                inventory_items: dict[str, Any] = {}
+                inventory_cursor = inventory_start
+                while inventory_cursor <= inventory_end:
+                    inventory_chunk_end = min(
+                        inventory_cursor + timedelta(days=MAX_PROVIDER_SLICE_DAYS) - timedelta(seconds=1),
+                        inventory_end,
+                    )
+                    inventory_response = client.get_compromised_account_slice(
+                        date_from=inventory_cursor.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        date_to=inventory_chunk_end.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        limit=500,
+                    )
+                    for item in inventory_response.items:
+                        normalized_item = normalize_response((item,))
+                        if not normalized_item:
+                            continue
+                        inventory_record = normalized_item[0]
+                        inventory_key = inventory_record.provider_record_id or inventory_record.compromise_identity
+                        inventory_items[inventory_key] = item
+                    inventory_cursor = inventory_chunk_end + timedelta(seconds=1)
+
+                inventory_records = normalize_response(tuple(inventory_items.values()))
+                family_counts: dict[str, int] = {}
+                for inventory_record in inventory_records:
+                    for family in inventory_record.stealer_families:
+                        family_counts[family] = family_counts.get(family, 0) + 1
+                _malware_inventory = {
+                    "summary": [
+                        {"name": name, "count": count}
+                        for name, count in sorted(
+                            family_counts.items(),
+                            key=lambda item: (-item[1], item[0].casefold()),
+                        )
+                    ],
+                    "record_count": len(inventory_records),
+                    "retrieved_count": len(inventory_items),
+                    "window_days": MALWARE_INVENTORY_DAYS,
+                }
+                _malware_inventory_refreshed_at = datetime.now(timezone.utc)
+
     records = normalize_response(tuple(provider_items.values()))
     observed_at = datetime.now(timezone.utc)
     with HistoryStore(DEFAULT_HISTORY_PATH) as history:
@@ -256,6 +317,16 @@ def _load_snapshot(date_from: str, date_to: str) -> dict[str, Any]:
         "retrieved_count": retrieved_count,
         "normalized_count": len(records),
         "collection_complete": True,
+        "malware_inventory": dict(_malware_inventory or {
+            "summary": [],
+            "record_count": 0,
+            "retrieved_count": 0,
+            "window_days": MALWARE_INVENTORY_DAYS,
+        }),
+        "malware_inventory_refreshed_at": (
+            _malware_inventory_refreshed_at.isoformat()
+            if _malware_inventory_refreshed_at else None
+        ),
     }
 
 
@@ -333,21 +404,16 @@ def _filtered_payload(query: dict[str, list[str]]) -> dict[str, Any]:
         key=str.casefold,
     )
     domain_counts: dict[str, int] = {}
-    malware_counts: dict[str, int] = {}
     for record, _classification in range_pairs:
         domain_name = record.domain or record.service_domain
         if domain_name:
             domain_counts[domain_name] = domain_counts.get(domain_name, 0) + 1
-        for family in record.stealer_families:
-            malware_counts[family] = malware_counts.get(family, 0) + 1
     domain_summary = [
         {"name": name, "count": count}
         for name, count in sorted(domain_counts.items(), key=lambda item: (-item[1], item[0].casefold()))
     ]
-    malware_summary = [
-        {"name": name, "count": count}
-        for name, count in sorted(malware_counts.items(), key=lambda item: (-item[1], item[0].casefold()))
-    ]
+    malware_inventory = _snapshot.get("malware_inventory") or {}
+    malware_summary = list(malware_inventory.get("summary") or [])
     category_counts = {
         category: sum(_source_category(record).casefold() == category.casefold()
                       for record in metric_records)
@@ -363,6 +429,9 @@ def _filtered_payload(query: dict[str, list[str]]) -> dict[str, Any]:
             "retrieved_count": _snapshot["retrieved_count"],
             "normalized_count": _snapshot["normalized_count"],
             "collection_complete": _snapshot["collection_complete"],
+            "malware_inventory_refreshed_at": _snapshot.get("malware_inventory_refreshed_at"),
+            "malware_inventory_record_count": malware_inventory.get("record_count", 0),
+            "malware_inventory_window_days": malware_inventory.get("window_days", MALWARE_INVENTORY_DAYS),
             "sort_basis": "dateFirstCompromised; fallback dateLastCompromised, dateDetected, dateFirstSeen",
         },
         "filters": {
