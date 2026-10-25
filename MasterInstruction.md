@@ -71,6 +71,7 @@ The app is a read-only monitoring and reporting interface. It must not alter Gro
 - Source categories Unique / Combolist are independent from temporal labels.
 - A record returned today is not automatically new. A recent Last Seen timestamp is account activity metadata and must never qualify an old compromise as NEW.
 - When the operator changes the date range, fetch a fresh provider snapshot for that exact range rather than relying only on a previously loaded in-memory snapshot. Refresh the current view automatically on startup, on date-range changes, and periodically while the dashboard is open; show the provider refresh timestamp and actual retrieved count.
+- Malware Family must be populated from malware family values returned by Group-IB, independently of the selected account date range. Maintain a separately refreshed rolling 90-day provider inventory, cached for five minutes, and show its window, record count, and refresh timestamp. Do not claim zero malware families globally solely because the selected account date range contains no records.
 - A clean/empty query is not evidence the monitored environment is safe.
 - Keep UTC-aware provider timestamps in canonical storage; render local timezone labels clearly (Asia/Manila).
 - Domain grouping uses normalized domain fields but preserves original provider values for provenance.
