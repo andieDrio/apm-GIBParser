@@ -192,19 +192,39 @@ def _load_snapshot(date_from: str, date_to: str) -> dict[str, Any]:
     provider_start = start.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     provider_end = end.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    # Fetch custom ranges in bounded 30-day slices. This supports wider
+    # operator-selected ranges without silently leaving an older snapshot on
+    # screen when a range exceeds one provider slice.
+    provider_items: dict[str, Any] = {}
+    cursor = start
     with GroupIBClient(
         config.username,
         config.api_token,
         base_url=config.api_base_url,
         timeout_seconds=config.request_timeout_seconds,
     ) as client:
-        response = client.get_compromised_account_slice(
-            date_from=provider_start,
-            date_to=provider_end,
-            limit=500,
-        )
+        while cursor <= end:
+            chunk_end = min(
+                cursor + timedelta(days=MAX_PROVIDER_SLICE_DAYS) - timedelta(seconds=1),
+                end,
+            )
+            chunk_start_utc = cursor.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            chunk_end_utc = chunk_end.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            response = client.get_compromised_account_slice(
+                date_from=chunk_start_utc,
+                date_to=chunk_end_utc,
+                limit=500,
+            )
+            for item in response.items:
+                normalized_item = normalize_response((item,))
+                if not normalized_item:
+                    continue
+                record = normalized_item[0]
+                key = record.provider_record_id or record.compromise_identity
+                provider_items[key] = item
+            cursor = chunk_end + timedelta(seconds=1)
 
-    records = normalize_response(response.items)
+    records = normalize_response(tuple(provider_items.values()))
     observed_at = datetime.now(timezone.utc)
     with HistoryStore(DEFAULT_HISTORY_PATH) as history:
         classifications = classify_records(
