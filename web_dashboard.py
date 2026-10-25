@@ -52,11 +52,13 @@ SECURITY_HEADERS = {
 
 _snapshot_lock = threading.Lock()
 _snapshot: dict[str, Any] | None = None
+_provider_cooldown_until: datetime | None = None
+_provider_warning: str | None = None
 _malware_inventory_lock = threading.Lock()
 _malware_inventory: dict[str, Any] | None = None
 _malware_inventory_refreshed_at: datetime | None = None
 MALWARE_INVENTORY_DAYS = 90
-MALWARE_INVENTORY_REFRESH_SECONDS = 300
+MALWARE_INVENTORY_REFRESH_SECONDS = 3600
 
 
 def build_health_payload(config: AppConfig | None = None) -> dict[str, Any]:
@@ -603,7 +605,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         return buffer.getvalue()
 
     def do_GET(self) -> None:  # noqa: N802
-        global _snapshot
+        global _snapshot, _provider_cooldown_until, _provider_warning
         parsed = urlsplit(self.path)
         if parsed.path in ("/", "/index.html"):
             try:
@@ -664,16 +666,46 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if (query.get("refresh") or [""])[0] == "1":
             date_from = (query.get("date_from") or [""])[0]
             date_to = (query.get("date_to") or [""])[0]
+            now_utc = datetime.now(timezone.utc)
             try:
-                # Validate before calling the provider; only replace the cache on success.
                 _validate_range(date_from, date_to)
-                fresh = _load_snapshot(date_from, date_to)
-            except (ValueError, GroupIBClientError, OSError) as exc:
-                self._json(502 if isinstance(exc, GroupIBClientError) else 400,
-                           {"status": "error", "message": str(exc)})
+            except ValueError as exc:
+                self._json(400, {"status": "error", "message": str(exc)})
                 return
-            with _snapshot_lock:
-                _snapshot = fresh
+
+            if _provider_cooldown_until and now_utc < _provider_cooldown_until:
+                if not _snapshot or date_from < _snapshot["date_from"] or date_to > _snapshot["date_to"]:
+                    remaining = max(1, int((_provider_cooldown_until - now_utc).total_seconds()))
+                    self._json(429, {
+                        "status": "error",
+                        "message": f"Group-IB rate limit cooldown is active for about {remaining} more seconds. No new provider request was sent.",
+                    })
+                    return
+                _provider_warning = (
+                    "Group-IB rate limit reached. Showing the last successful cached snapshot; "
+                    "automatic provider requests are paused until the cooldown ends."
+                )
+            else:
+                try:
+                    fresh = _load_snapshot(date_from, date_to)
+                except GroupIBRateLimitError as exc:
+                    _provider_cooldown_until = now_utc + timedelta(seconds=exc.retry_after_seconds)
+                    _provider_warning = (
+                        f"{exc} Automatic provider requests are paused for about "
+                        f"{exc.retry_after_seconds} seconds."
+                    )
+                    if not _snapshot or date_from < _snapshot["date_from"] or date_to > _snapshot["date_to"]:
+                        self._json(429, {"status": "error", "message": _provider_warning})
+                        return
+                except (ValueError, GroupIBClientError, OSError) as exc:
+                    self._json(502 if isinstance(exc, GroupIBClientError) else 400,
+                               {"status": "error", "message": str(exc)})
+                    return
+                else:
+                    with _snapshot_lock:
+                        _snapshot = fresh
+                    _provider_cooldown_until = None
+                    _provider_warning = None
 
         try:
             with _snapshot_lock:
@@ -681,6 +713,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except ValueError as exc:
             self._json(400, {"status": "error", "message": str(exc)})
             return
+        if _provider_warning:
+            payload["provider_warning"] = _provider_warning
         self._json(200, payload)
 
     def do_POST(self) -> None:  # noqa: N802
