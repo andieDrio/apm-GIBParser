@@ -22,7 +22,7 @@ import json
 import threading
 
 from config import AppConfig
-from groupib.client import GroupIBClient, GroupIBClientError
+from groupib.client import GroupIBClient, GroupIBClientError, GroupIBRateLimitError
 from groupib.normalizer import CanonicalGroupIBRecord, normalize_response
 from reporting.assessment import build_assessment
 from reporting.summary import build_quick_view
