@@ -81,7 +81,7 @@ def _validate_range(date_from: str, date_to: str) -> tuple[datetime, datetime]:
     if end < start:
         raise ValueError("date_to must be on or after date_from.")
     if (end - start).days >= MAX_COLLECTION_DAYS:
-        raise ValueError("Collection range cannot exceed 30 calendar days.")
+        raise ValueError("Collection range cannot exceed 90 calendar days.")
     if end > datetime.now(PHILIPPINES_TZ) + timedelta(days=1):
         raise ValueError("date_to cannot be in the future.")
     return start, end
