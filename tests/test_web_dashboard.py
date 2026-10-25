@@ -63,8 +63,21 @@ class DashboardHealthTests(unittest.TestCase):
         source = (Path(__file__).resolve().parents[1] / "web_dashboard.py").read_text(encoding="utf-8")
         self.assertIn("metric_pairs = []", source)
         self.assertIn("metric_pairs.append((record, classification))", source)
+        self.assertIn('"new": sum(x.classification == "NEW" for x in metric_classifications)', source)
         self.assertIn("metric_classifications,", source)
         self.assertIn("for category in (\"Unique\", \"Combolist\", \"Unmapped\")", source)
+
+    def test_malware_inventory_is_independent_of_selected_account_dates(self) -> None:
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        source = (root / "web_dashboard.py").read_text(encoding="utf-8")
+        html = (root / "web" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("MALWARE_INVENTORY_DAYS = 90", source)
+        self.assertIn("_malware_inventory_lock", source)
+        self.assertIn('malware_summary = list(malware_inventory.get("summary") or [])', source)
+        self.assertIn("rolling 90 days", html)
+        self.assertIn("malware-inventory-meta", html)
 
     def test_clickable_metric_filter_matches_recycled_old_and_repeat(self) -> None:
         self.assertTrue(_classification_matches("recycled-old", "RESEEN/RECYCLED"))
