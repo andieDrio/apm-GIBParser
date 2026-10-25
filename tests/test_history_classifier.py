@@ -20,7 +20,7 @@ def make_record(
     record_id: str = "record-001",
     first_seen: str | None = "2026-09-25T01:00:00Z",
     last_seen: str | None = "2026-09-25T01:30:00Z",
-    compromised: str | None = None,
+    compromised: str | None = "2026-09-24T01:00:00Z",
     detected: str | None = None,
     event_id: str = "event-001",
 ) -> object:
@@ -214,12 +214,31 @@ class HistoryClassificationTests(unittest.TestCase):
                 self.assertEqual(result.classification, OLD)
                 self.assertIn("last-seen activity does not make it new", result.reason)
 
+    def test_recent_last_seen_does_not_make_missing_compromise_date_new(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with HistoryStore(Path(directory) / "history.db") as store:
+                result = classify_record(
+                    store,
+                    make_record(
+                        first_seen="2026-10-24T01:00:00Z",
+                        last_seen="2026-10-25T01:00:00Z",
+                        compromised=None,
+                        detected="2026-10-25T01:00:00Z",
+                    ),
+                    observed_at=datetime(2026, 10, 25, 2, 0, tzinfo=timezone.utc),
+                    newness_window_days=7,
+                )
+
+                self.assertEqual(result.classification, UNVERIFIED)
+                self.assertIn("Compromised Date", result.reason)
+                self.assertIn("Last Seen", result.reason)
+
     def test_missing_timeline_is_unverified_not_new(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             with HistoryStore(Path(directory) / "history.db") as store:
                 result = classify_record(
                     store,
-                    make_record(first_seen=None, last_seen=None),
+                    make_record(first_seen=None, last_seen=None, compromised=None),
                     observed_at=OBSERVED_AT,
                     newness_window_days=7,
                 )
