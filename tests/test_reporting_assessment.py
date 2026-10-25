@@ -29,6 +29,7 @@ def make_record(
         "id": record_id,
         "login": f"{record_id}@example.test",
         "dateFirstSeen": first_seen,
+        "dateFirstCompromised": first_seen,
         "dateLastSeen": first_seen,
         "events": [{"id": f"event-{record_id}"}],
         "sourceType": ["stealer-log"],
